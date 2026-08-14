@@ -81,6 +81,41 @@ public class FoodService {
       }
     }
 
+    Food food3 = new Food();
+    food3.setFoodName("Panna Cotta");
+    food3.setShortFoodDesc("Panna Cotta");
+    food3.setPrice(BigDecimal.valueOf(490.00));
+    food3.setImagePath("");
+    
+    category = categoryService.getCategoryInit("DESSERT");
+    food3.setCategory(category);
+    foodRepository.save(food3);
+    
+    inventoryService.setInventoryInit(food3, 49);
+
+    Food food4 = new Food();
+    food4.setFoodName("Sweet Chili Salmon");
+    food4.setShortFoodDesc("SC Salmon");
+    food4.setPrice(BigDecimal.valueOf(350.00));
+    food4.setImagePath("");
+    
+    category = categoryService.getCategoryInit("MAIN DISH");
+    food4.setCategory(category);
+    foodRepository.save(food4);
+
+    inventoryService.setInventoryInit(food4, 12);
+
+    Food food5 = new Food();
+    food5.setFoodName("Shrimp Cocktail");
+    food5.setShortFoodDesc("Shrimp Cocktail");
+    food5.setPrice(BigDecimal.valueOf(599.00));
+    food5.setImagePath("");
+    
+    category = categoryService.getCategoryInit("APPETIZER");
+    food5.setCategory(category);
+    foodRepository.save(food5);
+
+    inventoryService.setInventoryInit(food5, 0);
     // Since it will be a JSON object
     // Get the object for prod variant then loop from there
     // if(food2.getWithVariant()){
