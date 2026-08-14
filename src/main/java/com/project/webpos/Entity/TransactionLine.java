@@ -10,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,9 +33,6 @@ public class TransactionLine {
   private LocalDateTime transactionDate;
 
   @Column(precision = 10, scale = 2, nullable = false)
-  private BigDecimal grossAmount;
-
-  @Column(precision = 10, scale = 2, nullable = false)
   private BigDecimal netAmount;
 
   @Column(precision = 10, scale = 2, nullable = false)
@@ -41,4 +40,25 @@ public class TransactionLine {
 
   @Column(nullable = false)
   private Integer quantity;
+
+  @Column(nullable = false)
+  private Long foodId;
+
+  @Column(nullable = false)
+  private String shortFoodDesc;
+
+  @Column(nullable = false)
+  private BigDecimal price;
+
+  private Integer sizeId = null;
+
+  @Column(nullable = false)
+  private String size = "None";
+
+  @Column(nullable = false)
+  private Boolean placed = true; // Means if it is still on the order summary or already placed on a table
+
+  @ManyToOne
+  @JoinColumn(name = "table_id")
+  private TableList table;
 }
