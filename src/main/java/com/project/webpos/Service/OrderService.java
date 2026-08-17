@@ -25,8 +25,8 @@ public class OrderService {
     return orderMapper.toResponseList(orderRepository.findAll());
   }
 
-  public OrderResponse getOrder(Long foodId){
-    return orderMapper.toResponse(orderRepository.findByFoodId(foodId));
+  public List<OrderResponse> getOrderByFoodId(Long foodId){
+    return orderMapper.toResponseList(orderRepository.findByFoodId(foodId));
     // return new OrderResponse();
   }
 
