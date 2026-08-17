@@ -31,8 +31,8 @@ public class OrderController {
   }
 
   @GetMapping("/{foodId}")
-  public ResponseEntity<OrderResponse> getOrder(@PathVariable Long foodId){
-    return ResponseEntity.ok(orderService.getOrder(foodId));
+  public ResponseEntity<List<OrderResponse>> getOrderByFoodId(@PathVariable Long foodId){
+    return ResponseEntity.ok(orderService.getOrderByFoodId(foodId));
   }
 
   @PatchMapping("/{id}")
