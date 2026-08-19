@@ -1,5 +1,6 @@
 package com.project.webpos.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class OrderService {
   private final OrderMapper orderMapper;
   private final OrderRepository orderRepository;
-  private final TableService tableService;
+  private final TableListService tableService;
 
   public List<OrderResponse> getOrders(){
     return orderMapper.toResponseList(orderRepository.findAll());
@@ -28,6 +29,14 @@ public class OrderService {
   public List<OrderResponse> getOrderByFoodId(Long foodId){
     return orderMapper.toResponseList(orderRepository.findByFoodId(foodId));
     // return new OrderResponse();
+  }
+
+  public BigDecimal getOrderSum(){
+    return orderRepository.findAll()
+            .stream()
+            .filter(o -> o.getPrice() != null && o.getQuantity() != null)
+            .map(o -> o.getPrice().multiply(BigDecimal.valueOf(o.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   public Boolean patchOrder(Integer id, OrderPatchRequest patchRequest){
