@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.project.webpos.Entity.TableList;
 
 @Repository
-public interface TableRepository extends JpaRepository<TableList, Integer> {
+public interface TableListRepository extends JpaRepository<TableList, Integer> {
 
 }
