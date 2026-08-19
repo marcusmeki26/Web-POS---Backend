@@ -1,5 +1,6 @@
 package com.project.webpos.Controller.v1;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,11 @@ public class OrderController {
   @GetMapping("/{foodId}")
   public ResponseEntity<List<OrderResponse>> getOrderByFoodId(@PathVariable Long foodId){
     return ResponseEntity.ok(orderService.getOrderByFoodId(foodId));
+  }
+
+  @GetMapping("/sum")
+  public ResponseEntity<BigDecimal> getOrderSum(){
+    return ResponseEntity.ok(orderService.getOrderSum());
   }
 
   @PatchMapping("/{id}")
