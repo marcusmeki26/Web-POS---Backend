@@ -33,7 +33,7 @@ public class OrderList {
   @Column(nullable = false)
   private LocalDateTime updatedDate;
   
-  @Column(nullable = false, unique = false)
+  @Column(nullable = false)
   private String receiptNo;
 
   @Column(nullable = false)

@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class OrderPatchRequest {
   private Integer quantity;
+  private Integer tableNo;
+  private Boolean placed;
 }
