@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
@@ -27,7 +28,12 @@ public class OrderController {
   private final OrderService orderService;
 
   @GetMapping
-  public ResponseEntity<List<OrderResponse>> getOrders(){
+  public ResponseEntity<List<OrderResponse>> getOrders(
+    @RequestParam(name = "table", required = false) Integer tableId
+  ){
+    if(tableId != null)
+      return ResponseEntity.ok(orderService.getOrderByTableId(tableId));
+    
     return ResponseEntity.ok(orderService.getOrders());
   }
 
@@ -41,9 +47,25 @@ public class OrderController {
     return ResponseEntity.ok(orderService.getOrderSum());
   }
 
+  @GetMapping("/current/receipt")
+  public ResponseEntity<String> getCurrentReceiptNo(){
+    return ResponseEntity.ok(orderService.getCurrentReceiptNo());
+  }
+
+  @GetMapping("/unplaced")
+  public ResponseEntity<List<OrderResponse>> getUnplacedOrders(){
+    return ResponseEntity.ok(orderService.getUnplacedOrders());
+  }
+
   @PatchMapping("/{id}")
   public ResponseEntity<Void> patchOrder(@PathVariable Integer id, @RequestBody OrderPatchRequest orderPatchRequest){
     return orderService.patchOrder(id, orderPatchRequest) ?
+      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+  }
+
+  @PatchMapping("/receipt/{receiptNo}")
+  public ResponseEntity<Void> patchOrderByReceiptNo(@PathVariable String receiptNo, @RequestBody OrderPatchRequest orderPatchRequest){
+    return orderService.patchOrder(receiptNo, orderPatchRequest) ?
       ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
   }
 

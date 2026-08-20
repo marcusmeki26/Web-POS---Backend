@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TableList;
+import com.project.webpos.Entity.TransactionSummary;
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
 import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
+import com.project.webpos.Repository.TransactionSummaryRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,14 +23,18 @@ public class OrderService {
   private final OrderMapper orderMapper;
   private final OrderRepository orderRepository;
   private final TableListService tableService;
+  private final TransactionSummaryRepository transactionSummaryRepository;
 
   public List<OrderResponse> getOrders(){
     return orderMapper.toResponseList(orderRepository.findAll());
   }
 
   public List<OrderResponse> getOrderByFoodId(Long foodId){
-    return orderMapper.toResponseList(orderRepository.findByFoodId(foodId));
-    // return new OrderResponse();
+    return orderMapper.toResponseList(orderRepository.findByFoodIdAndUnplaced(foodId));
+  }
+
+  public List<OrderResponse> getOrderByTableId(Integer tableId){
+    return orderMapper.toResponseList(orderRepository.findByTable_Id(tableId));
   }
 
   public BigDecimal getOrderSum(){
@@ -37,6 +43,38 @@ public class OrderService {
             .filter(o -> o.getPrice() != null && o.getQuantity() != null)
             .map(o -> o.getPrice().multiply(BigDecimal.valueOf(o.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  public String getCurrentReceiptNo(){
+    OrderList orderList = orderRepository.findCurrentReceiptNo();
+
+    if(orderList == null){
+      // Check Transaction Summary
+      TransactionSummary transactionSummary = transactionSummaryRepository.findCurrentReceiptNo();
+
+      if(transactionSummary == null){
+        return "R000001";
+      }else{
+        String removeChar = transactionSummary.getReceiptNo().replace("R", "");
+        Integer incReceipt = Integer.parseInt(removeChar);
+        incReceipt++;
+        // %0 means pad 0 based on the length
+        return String.format("R%0" + transactionSummary.getReceiptNo().length() + "d", incReceipt);
+      }
+    }
+
+    if(orderList.getPlaced() == true){
+      String removeChar = orderList.getReceiptNo().replace("R", "");
+      Integer incReceipt = Integer.parseInt(removeChar);
+      incReceipt++;
+      return String.format("R%0" + (orderList.getReceiptNo().length() - incReceipt.toString().length()) + "d", incReceipt);
+    }
+
+    return orderList.getReceiptNo();
+  }
+
+  public List<OrderResponse> getUnplacedOrders(){
+    return orderMapper.toResponseList(orderRepository.findUnplacedOrders());
   }
 
   public Boolean patchOrder(Integer id, OrderPatchRequest patchRequest){
@@ -49,6 +87,27 @@ public class OrderService {
       }
 
       orderRepository.save(orderList);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  public Boolean patchOrder(String receiptNo, OrderPatchRequest patchRequest){
+    List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
+    
+    if(orderList != null){
+      if(patchRequest.getTableNo() == null || patchRequest.getPlaced() == null)
+        throw new RuntimeException("Unable to update with the current value");
+
+      orderList.forEach(order -> {
+        TableList tableList = tableService.getTableById(patchRequest.getTableNo());
+        order.setTable(tableList);
+        order.setPlaced(patchRequest.getPlaced());
+
+        orderRepository.save(order);
+      });
 
       return true;
     }
