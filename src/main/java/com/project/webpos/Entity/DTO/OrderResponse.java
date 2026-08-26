@@ -18,4 +18,5 @@ public class OrderResponse {
   private Integer quantity;
   private Boolean placed;
   private Integer tableId;
+  private Integer orderType;
 }

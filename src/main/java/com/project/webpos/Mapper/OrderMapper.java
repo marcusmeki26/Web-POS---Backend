@@ -11,6 +11,7 @@ import com.project.webpos.Entity.DTO.OrderResponse;
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
   @Mapping(source = "table.id", target = "tableId")
+  @Mapping(source = "orderType.id", target = "orderType")
   OrderResponse toResponse(OrderList order);
 
   List<OrderResponse> toResponseList(List<OrderList> orderList);

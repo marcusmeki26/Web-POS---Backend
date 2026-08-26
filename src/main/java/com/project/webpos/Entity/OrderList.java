@@ -59,4 +59,8 @@ public class OrderList {
   @ManyToOne
   @JoinColumn(name = "table_id")
   private TableList table;
+
+  @ManyToOne
+  @JoinColumn(name = "order_id")
+  private OrderType orderType;
 }
