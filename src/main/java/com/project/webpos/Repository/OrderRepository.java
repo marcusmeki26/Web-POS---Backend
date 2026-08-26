@@ -14,6 +14,7 @@ public interface OrderRepository extends JpaRepository<OrderList, Integer>{
   List<OrderList> findByFoodId(Long foodId);
   List<OrderList> findByTable_Id(Integer foodId);
   List<OrderList> findByReceiptNo(String receiptNo);
+  OrderList findByReceiptNoAndFoodId(String receiptNo, Long foodId);
   
   @Query("SELECT ol " +
          "FROM OrderList ol " +
@@ -32,4 +33,11 @@ public interface OrderRepository extends JpaRepository<OrderList, Integer>{
         "WHERE ol.placed = false"
   )
   List<OrderList> findUnplacedOrders();
+  
+  @Query("SELECT ol " +
+        "FROM OrderList ol " +
+        "WHERE ol.placed = false " +
+        "LIMIT 1"
+  )
+  OrderList findUnplacedOrder();
 }

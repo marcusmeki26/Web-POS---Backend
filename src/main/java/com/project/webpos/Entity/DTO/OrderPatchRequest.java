@@ -9,4 +9,5 @@ public class OrderPatchRequest {
   private Integer quantity;
   private Integer tableNo;
   private Boolean placed;
+  private Integer orderType;
 }

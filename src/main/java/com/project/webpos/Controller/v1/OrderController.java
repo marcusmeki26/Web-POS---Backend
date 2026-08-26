@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
+import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
 import com.project.webpos.Service.OrderService;
@@ -43,8 +45,8 @@ public class OrderController {
   }
 
   @GetMapping("/sum")
-  public ResponseEntity<BigDecimal> getOrderSum(){
-    return ResponseEntity.ok(orderService.getOrderSum());
+  public ResponseEntity<BigDecimal> getOrderSumUnplaced(){
+    return ResponseEntity.ok(orderService.getOrderSumUnplaced());
   }
 
   @GetMapping("/current/receipt")
@@ -69,9 +71,21 @@ public class OrderController {
       ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
   }
 
+  @PatchMapping("/retrieve/{receiptNo}")
+  public ResponseEntity<Void> patchRetrieveOrderByReceiptNo(@PathVariable String receiptNo, @RequestBody OrderPatchRequest orderPatchRequest){
+    return orderService.patchRetrieveOrder(receiptNo, orderPatchRequest) ? 
+      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+  }
+
   @PostMapping
   public ResponseEntity<Void> setOrder(@RequestBody OrderCreateRequest request){
     return orderService.setOrder(request) ? 
       ResponseEntity.status(HttpStatus.CREATED).build() : ResponseEntity.badRequest().build();
+  }
+
+  @DeleteMapping
+  public ResponseEntity<Void> deleteOrder(@RequestBody OrderDeleteRequest request){
+    return orderService.deleteOrder(request) ? 
+      ResponseEntity.ok().build() : ResponseEntity.badRequest().build(); 
   }
 }
