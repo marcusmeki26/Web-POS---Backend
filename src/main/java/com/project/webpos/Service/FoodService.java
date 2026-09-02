@@ -30,6 +30,11 @@ public class FoodService {
     return foodMapper.toResponseList(foodList);
   }
 
+  public Food getFoodById(Long id){
+    return foodRepository.findById(id)
+      .orElseThrow(() -> new RuntimeException("No existing food"));
+  }
+
   // Used for initializing menu (not permanent)
   public void setFoodInit() {
     Food food1 = new Food();
