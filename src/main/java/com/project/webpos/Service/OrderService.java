@@ -82,16 +82,6 @@ public class OrderService {
     return orderList.getReceiptNo();
   }
 
-  private String checkForUnplaced(){
-    OrderList orderList = orderRepository.findUnplacedOrder();
-
-    if(orderList != null){
-      return orderList.getReceiptNo();
-    }
-
-    return "";
-  }
-
   public List<OrderResponse> getUnplacedOrders(){
     return orderMapper.toResponseList(orderRepository.findUnplacedOrders());
   }
@@ -106,12 +96,25 @@ public class OrderService {
         orderList.setQuantity(patchRequest.getQuantity());
       }
 
+      if(patchRequest.getReceiptNo() != null){
+        orderList.setReceiptNo(patchRequest.getReceiptNo());
+      }
+
       orderRepository.save(orderList);
 
       return true;
     }
 
     return false;
+  }
+
+  public OrderList getOrderByFoodIdAndTableId(Long foodId, Integer tableId){
+    return orderRepository.findByFoodIdAndTableId(foodId, tableId);
+  }
+
+  public OrderList getById(Integer id){
+    return orderRepository.findById(id)
+      .orElseThrow(() -> new RuntimeException("No existing order id"));
   }
 
   // Updating of order into placed
@@ -142,6 +145,36 @@ public class OrderService {
     }
 
     return false;
+  }
+
+  public Boolean patchAddedOrder(String receiptNo, List<OrderPatchRequest> orderPatchRequests){
+    orderPatchRequests.forEach(order -> {
+      OrderList orderListSave, orderListDel;
+      if(order.getSizeId() == null)
+        orderListSave = getOrderByFoodIdAndTableId(order.getFoodId(), order.getTableNo());
+      else // Query with sizes
+        orderListSave = orderRepository.findByFoodIdAndTableIdAndSizeId(order.getFoodId(), order.getTableNo(), order.getSizeId());
+
+      if(orderListSave != null){ // Has existing record on the table
+        orderListSave.setQuantity((orderListSave.getQuantity() + order.getQuantity()));
+
+        orderRepository.save(orderListSave);
+        orderListDel = getById(order.getId());
+        orderRepository.delete(orderListDel);
+      }else{ // No existing record on the table
+        OrderList orderList = getById(order.getId());
+        
+        orderList.setReceiptNo(receiptNo);
+        orderList.setPlaced(true);
+
+        TableList tableList = tableService.getTableById(order.getTableNo());
+        orderList.setTable(tableList);
+        
+        orderRepository.save(orderList);
+      }
+    });
+
+    return true;
   }
 
   // Updating of order when being retrieved
@@ -209,5 +242,16 @@ public class OrderService {
     }
 
     return false;
+  }
+
+  // Utilities
+  private String checkForUnplaced(){
+    OrderList orderList = orderRepository.findUnplacedOrder();
+
+    if(orderList != null){
+      return orderList.getReceiptNo();
+    }
+
+    return "";
   }
 }

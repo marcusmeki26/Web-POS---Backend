@@ -15,6 +15,8 @@ public interface OrderRepository extends JpaRepository<OrderList, Integer>{
   List<OrderList> findByTable_Id(Integer foodId);
   List<OrderList> findByReceiptNo(String receiptNo);
   OrderList findByReceiptNoAndFoodId(String receiptNo, Long foodId);
+  OrderList findByFoodIdAndTableId(Long foodId, Integer tableId);
+  OrderList findByFoodIdAndTableIdAndSizeId(Long foodId, Integer tableId, Integer sizeId);
   
   @Query("SELECT ol " +
          "FROM OrderList ol " +
