@@ -71,6 +71,12 @@ public class OrderController {
       ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
   }
 
+  @PatchMapping("/receipt/existing/{receiptNo}")
+  public ResponseEntity<Void> patchOrdersByReceiptNo(@PathVariable String receiptNo, @RequestBody List<OrderPatchRequest> orderPatchRequests){
+    return orderService.patchAddedOrder(receiptNo, orderPatchRequests) ?
+      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+  }
+
   @PatchMapping("/retrieve/{receiptNo}")
   public ResponseEntity<Void> patchRetrieveOrderByReceiptNo(@PathVariable String receiptNo, @RequestBody OrderPatchRequest orderPatchRequest){
     return orderService.patchRetrieveOrder(receiptNo, orderPatchRequest) ? 
