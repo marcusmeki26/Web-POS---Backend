@@ -11,18 +11,18 @@ import com.project.webpos.Entity.OrderList;
 
 @Repository
 public interface OrderRepository extends JpaRepository<OrderList, Integer>{
-  List<OrderList> findByFoodId(Long foodId);
-  List<OrderList> findByTable_Id(Integer foodId);
+  List<OrderList> findByNumber(Long number);
+  List<OrderList> findByTable_Id(Integer number);
   List<OrderList> findByReceiptNo(String receiptNo);
-  OrderList findByReceiptNoAndFoodId(String receiptNo, Long foodId);
-  OrderList findByFoodIdAndTableId(Long foodId, Integer tableId);
-  OrderList findByFoodIdAndTableIdAndSizeId(Long foodId, Integer tableId, Integer sizeId);
+  OrderList findByReceiptNoAndNumber(String receiptNo, Long number);
+  OrderList findByNumberAndTableId(Long number, Integer tableId);
+  OrderList findByNumberAndTableIdAndSizeId(Long number, Integer tableId, Integer sizeId);
   
   @Query("SELECT ol " +
          "FROM OrderList ol " +
-         "WHERE ol.foodId =  :foodId AND ol.placed = false"
+         "WHERE ol.number =  :number AND ol.placed = false"
   )
-  List<OrderList> findByFoodIdAndUnplaced(@Param("foodId") Long foodId);
+  List<OrderList> findByNumberAndUnplaced(@Param("number") Long number);
 
   @Query("SELECT ol " +
          "FROM OrderList ol " +
