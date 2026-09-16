@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public class OrderDeleteRequest {
   private String receiptNo;
-  private Long foodId;
+  private Long number;
 }
