@@ -2,6 +2,8 @@ package com.project.webpos.Entity.DTO;
 
 import java.math.BigDecimal;
 
+import com.project.webpos.Enum.EntryType;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,11 +11,13 @@ import lombok.Setter;
 @Setter
 public class OrderCreateRequest {
   private String receiptNo;
-  private Long foodId;
+  private Long number;
   private String shortFoodDesc;
   private BigDecimal price;
+  private Float discountPercent;
   private Integer sizeId;
   private String size;
+  private EntryType entryType;
   private Integer quantity;
   private Boolean placed;
   private Integer tableId;
