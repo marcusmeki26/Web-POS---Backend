@@ -19,6 +19,8 @@ import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
+import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
+import com.project.webpos.Entity.DTO.OrderPaymentResponse;
 import com.project.webpos.Service.OrderService;
 
 import lombok.RequiredArgsConstructor;
@@ -87,6 +89,22 @@ public class OrderController {
   public ResponseEntity<Void> setOrder(@RequestBody OrderCreateRequest request){
     return orderService.setOrder(request) ? 
       ResponseEntity.status(HttpStatus.CREATED).build() : ResponseEntity.badRequest().build();
+  }
+
+  @PostMapping("/payment")
+  public ResponseEntity<OrderPaymentResponse> setPayment(@RequestBody OrderPaymentCreateRequest request){
+    // return orderService.setPayment(request) ?
+    //   ResponseEntity.status(HttpStatus.CREATED).build() : ResponseEntity.badRequest().build();
+
+      if(orderService.setPayment(request)){
+        OrderPaymentResponse response = new OrderPaymentResponse();
+        response.setProcessTransaction(true);
+        return ResponseEntity.ok(response); 
+      }else{
+        OrderPaymentResponse response = new OrderPaymentResponse();
+        response.setProcessTransaction(false);
+        return ResponseEntity.ok(response); 
+      }
   }
 
   @DeleteMapping
