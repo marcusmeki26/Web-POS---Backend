@@ -13,6 +13,8 @@ import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
+import com.project.webpos.Enum.EntryType;
+import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
 import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
 import com.project.webpos.Repository.TransactionSummaryRepository;
@@ -33,7 +35,7 @@ public class OrderService {
   }
 
   public List<OrderResponse> getOrderByFoodId(Long foodId){
-    return orderMapper.toResponseList(orderRepository.findByFoodIdAndUnplaced(foodId));
+    return orderMapper.toResponseList(orderRepository.findByNumberAndUnplaced(foodId));
   }
 
   public List<OrderResponse> getOrderByTableId(Integer tableId){
@@ -86,7 +88,12 @@ public class OrderService {
     return orderMapper.toResponseList(orderRepository.findUnplacedOrders());
   }
 
-  // Updates only the quantity of a specific record
+  /**
+   * Updates the quantity and amount of the specific order
+   * @param id The id of the order
+   * @param patchRequest The object of OrderPatchRequest class
+   * @return true if updating is successful
+   */
   public Boolean patchOrder(Integer id, OrderPatchRequest patchRequest){
     OrderList orderList = orderRepository.findById(id)
           .orElseThrow(() -> new RuntimeException("Invalid order value"));
@@ -94,6 +101,19 @@ public class OrderService {
     if(orderList != null){
       if(patchRequest.getQuantity() != null){
         orderList.setQuantity(patchRequest.getQuantity());
+        BigDecimal price = orderList.getPrice();
+        BigDecimal amount = BigDecimal.valueOf(0);
+        BigDecimal newDiscAmt = BigDecimal.valueOf(0);
+        Integer qty = orderList.getQuantity();
+        Float discPercent = orderList.getDiscountPercent();      
+
+        if(orderList.getDiscountPercent() != Float.valueOf(0)){
+          newDiscAmt = price.multiply(BigDecimal.valueOf(qty)).multiply(BigDecimal.valueOf(discPercent / 100));
+          orderList.setDiscountAmount(newDiscAmt);
+        }
+
+        amount = price.multiply(BigDecimal.valueOf(qty)).subtract(newDiscAmt);
+        orderList.setAmount(amount);
       }
 
       if(patchRequest.getReceiptNo() != null){
@@ -109,7 +129,7 @@ public class OrderService {
   }
 
   public OrderList getOrderByFoodIdAndTableId(Long foodId, Integer tableId){
-    return orderRepository.findByFoodIdAndTableId(foodId, tableId);
+    return orderRepository.findByNumberAndTableId(foodId, tableId);
   }
 
   public OrderList getById(Integer id){
@@ -151,9 +171,9 @@ public class OrderService {
     orderPatchRequests.forEach(order -> {
       OrderList orderListSave, orderListDel;
       if(order.getSizeId() == null)
-        orderListSave = getOrderByFoodIdAndTableId(order.getFoodId(), order.getTableNo());
+        orderListSave = getOrderByFoodIdAndTableId(order.getNumber(), order.getTableNo());
       else // Query with sizes
-        orderListSave = orderRepository.findByFoodIdAndTableIdAndSizeId(order.getFoodId(), order.getTableNo(), order.getSizeId());
+        orderListSave = orderRepository.findByNumberAndTableIdAndSizeId(order.getNumber(), order.getTableNo(), order.getSizeId());
 
       if(orderListSave != null){ // Has existing record on the table
         orderListSave.setQuantity((orderListSave.getQuantity() + order.getQuantity()));
@@ -210,14 +230,22 @@ public class OrderService {
 
   public Boolean setOrder(OrderCreateRequest request){
     OrderList order = new OrderList();
+    BigDecimal amount;
 
     order.setReceiptNo(request.getReceiptNo());
-    order.setFoodId(request.getFoodId());
+    order.setNumber(request.getNumber());
     order.setShortFoodDesc(request.getShortFoodDesc());
     order.setPrice(request.getPrice());
+    order.setDiscountPercent(request.getDiscountPercent());
+    order.setEntryType(request.getEntryType());
     order.setSizeId(request.getSizeId());
     order.setSize(request.getSize());
     order.setQuantity(request.getQuantity());
+
+    BigDecimal price = order.getPrice();
+    BigDecimal discountAmount = order.getDiscountAmount();
+    amount = price.subtract(discountAmount).multiply(BigDecimal.valueOf(order.getQuantity()));
+    order.setAmount(amount);
 
     // Add getting of table object
     if(request.getTableId() != null){
@@ -232,9 +260,46 @@ public class OrderService {
     return false;
   }
 
+  /**
+   * Processing of payment either partial or full payment.
+   * @param request The object of OrderPaymentCreateRequest class
+   * @return true if the payment is inserted successfully.
+   */
+  public Boolean setPayment(OrderPaymentCreateRequest request){
+    BigDecimal totalAmt = request.getTotalAmount();
+    BigDecimal payment = request.getPayment();
+    
+    OrderList order = new OrderList();
+    order.setPrice(BigDecimal.valueOf(0.00));
+    order.setQuantity(1);
+    order.setPlaced(true);
+    order.setShortFoodDesc(request.getShortFoodDesc());
+    order.setAmount(payment);
+    order.setEntryType(EntryType.PAYMENT);
+    order.setReceiptNo(request.getReceiptNo());
+    order.setNumber(request.getNumber());
+    
+    if(request.getTableNo() != null){
+      TableList tableList = tableService.getTableById(request.getTableNo());
+      order.setTable(tableList);
+    }
+
+    orderRepository.save(order);
+    
+    if(payment.compareTo(totalAmt) == -1)
+      return false;
+    
+    return true;
+  }
+
+  /**
+   * Deletes the record based on receipt no. & number field. 
+   * @param request The object of OrderDeleteRequest class
+   * @return true if the deletion is successful
+   */
   public Boolean deleteOrder(OrderDeleteRequest request){
-    if(request.getReceiptNo() != null || request.getFoodId() != null){
-      OrderList orderList = orderRepository.findByReceiptNoAndFoodId(request.getReceiptNo(), request.getFoodId());
+    if(request.getReceiptNo() != null || request.getNumber() != null){
+      OrderList orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber());
 
       orderRepository.delete(orderList);
 
