@@ -6,8 +6,12 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.project.webpos.Enum.EntryType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,13 +41,24 @@ public class OrderList {
   private String receiptNo;
 
   @Column(nullable = false)
-  private Long foodId;
+  @Enumerated(EnumType.ORDINAL)
+  private EntryType entryType = EntryType.ORDER;
+
+  @Column(nullable = false)
+  private Long number;
 
   @Column(nullable = false)
   private String shortFoodDesc;
 
   @Column(nullable = false)
   private BigDecimal price;
+
+  @Column(nullable = false)
+  private BigDecimal amount;
+
+  private BigDecimal discountAmount = BigDecimal.valueOf(0);
+
+  private Float discountPercent = Float.valueOf(0);
 
   private Integer sizeId = null;
 
