@@ -40,9 +40,15 @@ public class TransactionSummary {
 
   @Column(precision = 10, scale = 2, nullable = false)
   private BigDecimal netSales;
+  
+  @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal vatAmount;
 
   @Column(precision = 10, scale = 2, nullable = false)
   private BigDecimal discountAmount;
+
+  @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal payment;
   
   @Column(nullable = false)
   private Integer quantity;

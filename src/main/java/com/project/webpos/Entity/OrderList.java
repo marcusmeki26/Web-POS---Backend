@@ -56,7 +56,10 @@ public class OrderList {
   @Column(nullable = false)
   private BigDecimal amount;
 
-  private BigDecimal discountAmount = BigDecimal.valueOf(0);
+  @Column(nullable = false)
+  private BigDecimal vatAmount = BigDecimal.ZERO;
+
+  private BigDecimal discountAmount = BigDecimal.ZERO;
 
   private Float discountPercent = Float.valueOf(0);
 
