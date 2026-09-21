@@ -75,8 +75,8 @@ public class OrderController {
 
   @PatchMapping("/receipt/existing/{receiptNo}")
   public ResponseEntity<Void> patchOrdersByReceiptNo(@PathVariable String receiptNo, @RequestBody List<OrderPatchRequest> orderPatchRequests){
-    return orderService.patchAddedOrder(receiptNo, orderPatchRequests) ?
-      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    orderService.patchAddedOrder(receiptNo, orderPatchRequests);
+    return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/retrieve/{receiptNo}")
@@ -87,8 +87,8 @@ public class OrderController {
 
   @PostMapping
   public ResponseEntity<Void> setOrder(@RequestBody OrderCreateRequest request){
-    return orderService.setOrder(request) ? 
-      ResponseEntity.status(HttpStatus.CREATED).build() : ResponseEntity.badRequest().build();
+    orderService.setOrder(request);
+    return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
   @PostMapping("/payment")

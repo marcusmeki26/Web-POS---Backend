@@ -33,7 +33,13 @@ public class TransactionLine {
   private LocalDateTime transactionDate;
 
   @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal grossAmount;
+
+  @Column(precision = 10, scale = 2, nullable = false)
   private BigDecimal netAmount;
+  
+  @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal vatAmount;
 
   @Column(precision = 10, scale = 2, nullable = false)
   private BigDecimal discountAmount;
@@ -42,7 +48,7 @@ public class TransactionLine {
   private Integer quantity;
 
   @Column(nullable = false)
-  private Long foodId;
+  private Long number;
 
   @Column(nullable = false)
   private String shortFoodDesc;
@@ -54,10 +60,7 @@ public class TransactionLine {
 
   @Column(nullable = false)
   private String size = "None";
-
-  @Column(nullable = false)
-  private Boolean placed = true; // Means if it is still on the order summary or already placed on a table
-
+  
   @ManyToOne
   @JoinColumn(name = "table_id")
   private TableList table;

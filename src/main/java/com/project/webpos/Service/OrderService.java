@@ -1,6 +1,7 @@
 package com.project.webpos.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -19,16 +20,22 @@ import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
 import com.project.webpos.Repository.TransactionSummaryRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+  // Remove all Boolean return values in Insertion Statement. Create exception handler for failed insertion :REMOVE-COMMENT
+  // Change hard coded values like 1.12 & .12 into setup based :REMOVE-COMMENT
   private final OrderMapper orderMapper;
   private final OrderRepository orderRepository;
   private final TableListService tableService;
   private final TransactionSummaryRepository transactionSummaryRepository;
   private final OrderTypeService orderTypeService;
+  private final TransactionLineService transactionLineService;
+  private final TransactionPaymentService transactionPaymentService;
+  private final TransactionSummaryService transactionSummaryService;
 
   public List<OrderResponse> getOrders(){
     return orderMapper.toResponseList(orderRepository.findAll());
@@ -38,6 +45,11 @@ public class OrderService {
     return orderMapper.toResponseList(orderRepository.findByNumberAndUnplaced(foodId));
   }
 
+  /**
+   * Gets the {@code List<OrderList>} and returns it in a {@code List<OrderResponse>} format
+   * @param tableId 
+   * @return {@code List<OrderReponse>}
+   */
   public List<OrderResponse> getOrderByTableId(Integer tableId){
     return orderMapper.toResponseList(orderRepository.findByTable_Id(tableId));
   }
@@ -70,7 +82,7 @@ public class OrderService {
         Integer incReceipt = Integer.parseInt(removeChar);
         incReceipt++;
         // %0 means pad 0 based on the length
-        return String.format("R%0" + transactionSummary.getReceiptNo().length() + "d", incReceipt);
+        return String.format("R%0" + removeChar.length() + "d", incReceipt);
       }
     }
 
@@ -102,8 +114,9 @@ public class OrderService {
       if(patchRequest.getQuantity() != null){
         orderList.setQuantity(patchRequest.getQuantity());
         BigDecimal price = orderList.getPrice();
-        BigDecimal amount = BigDecimal.valueOf(0);
-        BigDecimal newDiscAmt = BigDecimal.valueOf(0);
+        BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal newDiscAmt = BigDecimal.ZERO;
+        BigDecimal newVatAmt = BigDecimal.ZERO;
         Integer qty = orderList.getQuantity();
         Float discPercent = orderList.getDiscountPercent();      
 
@@ -113,7 +126,9 @@ public class OrderService {
         }
 
         amount = price.multiply(BigDecimal.valueOf(qty)).subtract(newDiscAmt);
+        newVatAmt = amount.divide(BigDecimal.valueOf(1.12), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(.12));
         orderList.setAmount(amount);
+        orderList.setVatAmount(newVatAmt);
       }
 
       if(patchRequest.getReceiptNo() != null){
@@ -167,7 +182,12 @@ public class OrderService {
     return false;
   }
 
-  public Boolean patchAddedOrder(String receiptNo, List<OrderPatchRequest> orderPatchRequests){
+  /**
+   * Appending of new order to a table that has existing orders.
+   * @param receiptNo value of {@code String} the receipt no. of the table that has existing orders 
+   * @param orderPatchRequests value of {@code List<OrderPatchRequest>} the order that will be added to the table
+   */
+  public void patchAddedOrder(String receiptNo, List<OrderPatchRequest> orderPatchRequests){
     orderPatchRequests.forEach(order -> {
       OrderList orderListSave, orderListDel;
       if(order.getSizeId() == null)
@@ -193,8 +213,6 @@ public class OrderService {
         orderRepository.save(orderList);
       }
     });
-
-    return true;
   }
 
   // Updating of order when being retrieved
@@ -228,9 +246,13 @@ public class OrderService {
     return false;
   }
 
-  public Boolean setOrder(OrderCreateRequest request){
+  /**
+   * Inserts a new order into Order List table
+   * @param request value of {@code OrderCreateRequest}
+   * @return {@code void}
+   */
+  public void setOrder(OrderCreateRequest request){
     OrderList order = new OrderList();
-    BigDecimal amount;
 
     order.setReceiptNo(request.getReceiptNo());
     order.setNumber(request.getNumber());
@@ -241,55 +263,100 @@ public class OrderService {
     order.setSizeId(request.getSizeId());
     order.setSize(request.getSize());
     order.setQuantity(request.getQuantity());
+    
+    BigDecimal totalPrice = order.getPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
+    // Turn discount percent into decimal
+    BigDecimal discountPercent = BigDecimal.valueOf(order.getDiscountPercent()).multiply(BigDecimal.valueOf(100));
+    BigDecimal discountAmount = totalPrice.multiply(discountPercent);
 
-    BigDecimal price = order.getPrice();
-    BigDecimal discountAmount = order.getDiscountAmount();
-    amount = price.subtract(discountAmount).multiply(BigDecimal.valueOf(order.getQuantity()));
+    BigDecimal amount = totalPrice.subtract(discountAmount);
+    BigDecimal vatAmount = amount.divide(BigDecimal.valueOf(1.12),  2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(.12));
     order.setAmount(amount);
-
+    order.setDiscountAmount(discountAmount);
+    order.setVatAmount(vatAmount);
+    
     // Add getting of table object
     if(request.getTableId() != null){
       TableList table = tableService.getTableById(request.getTableId());
       order.setTable(table);
     }
 
-    if(orderRepository.save(order) != null){
-      return true;
-    }
-
-    return false;
+    orderRepository.save(order);
   }
 
   /**
    * Processing of payment either partial or full payment.
+   * Will move the transaction into Transaction Line & Transaction Summary table if the payment is complete
    * @param request The object of OrderPaymentCreateRequest class
    * @return true if the payment is inserted successfully.
    */
+  @Transactional 
   public Boolean setPayment(OrderPaymentCreateRequest request){
+    if(request.getReceiptNo() == null || request.getTableNo() == null)
+        throw new RuntimeException("Cannot process request without receipt no or table no");
+    
     BigDecimal totalAmt = request.getTotalAmount();
     BigDecimal payment = request.getPayment();
     
-    OrderList order = new OrderList();
-    order.setPrice(BigDecimal.valueOf(0.00));
-    order.setQuantity(1);
-    order.setPlaced(true);
-    order.setShortFoodDesc(request.getShortFoodDesc());
-    order.setAmount(payment);
-    order.setEntryType(EntryType.PAYMENT);
-    order.setReceiptNo(request.getReceiptNo());
-    order.setNumber(request.getNumber());
+    OrderList orderPaymentLine = new OrderList();
+    orderPaymentLine.setPrice(BigDecimal.valueOf(0.00));
+    orderPaymentLine.setQuantity(1);
+    orderPaymentLine.setPlaced(true);
+    orderPaymentLine.setShortFoodDesc(request.getShortFoodDesc());
+    orderPaymentLine.setAmount(payment);
+    orderPaymentLine.setEntryType(EntryType.PAYMENT);
+    orderPaymentLine.setReceiptNo(request.getReceiptNo());
+    orderPaymentLine.setNumber(request.getNumber());
     
-    if(request.getTableNo() != null){
-      TableList tableList = tableService.getTableById(request.getTableNo());
-      order.setTable(tableList);
-    }
+    TableList tableList = tableService.getTableById(request.getTableNo());
+    orderPaymentLine.setTable(tableList);
 
-    orderRepository.save(order);
+    orderRepository.save(orderPaymentLine);
     
     if(payment.compareTo(totalAmt) == -1)
       return false;
+    else{
+      // Insert change line
+      BigDecimal change = payment.subtract(totalAmt);
+      if(change.compareTo(BigDecimal.valueOf(0)) == 1){
+        OrderList orderChangeLine = new OrderList(); 
+        orderChangeLine.setPrice(BigDecimal.valueOf(0.00));
+        orderChangeLine.setQuantity(1);
+        orderChangeLine.setPlaced(true);
+        orderChangeLine.setShortFoodDesc("Cash change");
+        orderChangeLine.setAmount(change.negate());
+        orderChangeLine.setEntryType(EntryType.PAYMENT);
+        orderChangeLine.setReceiptNo(request.getReceiptNo());
+        orderChangeLine.setNumber(request.getNumber());
+        
+        orderChangeLine.setTable(tableList);
+
+        orderRepository.save(orderChangeLine);
+      }
+      
+      List<OrderList> orders = orderRepository.findByTable_Id(request.getTableNo());
+      List<OrderList> ordersByOrder = orders.stream()
+                                        .filter(o -> o.getEntryType() == EntryType.ORDER)
+                                        .toList();
+      if(ordersByOrder != null) 
+        transactionLineService.setTransactionLine(ordersByOrder);
+      
+      List<OrderList> ordersByPayment = orders.stream()
+                                          .filter(o -> o.getEntryType() == EntryType.PAYMENT)
+                                          .toList();
+      if(ordersByPayment != null)
+        transactionPaymentService.setTransactionPayment(ordersByPayment);
+
+      // Working moving to trans line and trans payment :REMOVE-COMMENT
+      // Next is move it on Transaction Summary table :REMOVE-COMMENT
+      if(orders != null)
+        transactionSummaryService.setTransactionSummary(orders);
+
+      orderRepository.deleteAll(orders);
+      
+      return true;
+    }
     
-    return true;
   }
 
   /**

@@ -13,4 +13,11 @@ public interface TransactionSummaryRepository extends JpaRepository<TransactionS
          "ORDER BY ts.receiptNo DESC " +
          "LIMIT 1")
   TransactionSummary findCurrentReceiptNo();
+
+  @Query ("SELECT ts.transactionNo " +
+          "FROM  TransactionSummary ts " + 
+          "WHERE ts.transactionNo != '' " +
+          "ORDER BY ts.receiptNo DESC " + 
+          "LIMIT 1")
+  String findLastTransactionNo();
 }
