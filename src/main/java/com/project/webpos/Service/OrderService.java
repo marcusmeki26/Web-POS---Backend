@@ -16,6 +16,7 @@ import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
 import com.project.webpos.Enum.EntryType;
 import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
+import com.project.webpos.Entity.DTO.OrderPaymentResponse;
 import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
 import com.project.webpos.Repository.TransactionSummaryRepository;
@@ -197,6 +198,15 @@ public class OrderService {
 
       if(orderListSave != null){ // Has existing record on the table
         orderListSave.setQuantity((orderListSave.getQuantity() + order.getQuantity()));
+        BigDecimal newDiscAmt = BigDecimal.ZERO;
+        BigDecimal tempNewAmt = orderListSave.getPrice().multiply(BigDecimal.valueOf(orderListSave.getQuantity())); 
+        if(orderListSave.getDiscountPercent() != 0){
+          Float discPercent = orderListSave.getDiscountPercent();
+          newDiscAmt = tempNewAmt.multiply(BigDecimal.valueOf(discPercent).multiply(BigDecimal.valueOf((discPercent / 100))));
+        }
+        BigDecimal newAmount = tempNewAmt.subtract(newDiscAmt);
+        orderListSave.setAmount(newAmount);
+        orderListSave.setDiscountAmount(newDiscAmt);
 
         orderRepository.save(orderListSave);
         orderListDel = getById(order.getId());
@@ -291,7 +301,7 @@ public class OrderService {
    * @return true if the payment is inserted successfully.
    */
   @Transactional 
-  public Boolean setPayment(OrderPaymentCreateRequest request){
+  public OrderPaymentResponse setPayment(OrderPaymentCreateRequest request){
     if(request.getReceiptNo() == null || request.getTableNo() == null)
         throw new RuntimeException("Cannot process request without receipt no or table no");
     
@@ -313,8 +323,9 @@ public class OrderService {
 
     orderRepository.save(orderPaymentLine);
     
-    if(payment.compareTo(totalAmt) == -1)
-      return false;
+    if(payment.compareTo(totalAmt) == -1){
+      return new OrderPaymentResponse(false, null);
+    }
     else{
       // Insert change line
       BigDecimal change = payment.subtract(totalAmt);
@@ -354,7 +365,7 @@ public class OrderService {
 
       orderRepository.deleteAll(orders);
       
-      return true;
+      return new OrderPaymentResponse(true, orderMapper.toResponseList(orders));
     }
     
   }

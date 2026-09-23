@@ -95,15 +95,15 @@ public class OrderController {
   public ResponseEntity<OrderPaymentResponse> setPayment(@RequestBody OrderPaymentCreateRequest request){
     // return orderService.setPayment(request) ?
     //   ResponseEntity.status(HttpStatus.CREATED).build() : ResponseEntity.badRequest().build();
-
-      if(orderService.setPayment(request)){
-        OrderPaymentResponse response = new OrderPaymentResponse();
-        response.setProcessTransaction(true);
-        return ResponseEntity.ok(response); 
+      OrderPaymentResponse orderPaymentResponse = orderService.setPayment(request);
+      if(orderPaymentResponse.getProcessTransaction()){
+        // OrderPaymentResponse response = new OrderPaymentResponse();
+        // response.setProcessTransaction(true);
+        return ResponseEntity.ok(orderPaymentResponse); 
       }else{
-        OrderPaymentResponse response = new OrderPaymentResponse();
-        response.setProcessTransaction(false);
-        return ResponseEntity.ok(response); 
+        // OrderPaymentResponse response = new OrderPaymentResponse();
+        // response.setProcessTransaction(false);
+        return ResponseEntity.ok(orderPaymentResponse); 
       }
   }
 
