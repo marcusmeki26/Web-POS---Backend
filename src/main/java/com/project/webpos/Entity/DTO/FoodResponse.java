@@ -17,4 +17,5 @@ public class FoodResponse {
   private String imagePath;
   private String categoryType;
   private List<InventoryResponse> inventory;
+  private Integer quantity;
 }

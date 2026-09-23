@@ -1,6 +1,7 @@
 package com.project.webpos.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -27,7 +28,15 @@ public class FoodService {
 
   public List<FoodResponse> getFoodList() {
     List<Food> foodList = foodRepository.findAll();
-    return foodMapper.toResponseList(foodList);
+    List<FoodResponse> foodResponseList = new ArrayList<>();
+    for(Food food : foodList){
+      if(food.getWithVariant()){
+        foodResponseList.add(foodMapper.toResponse(food));
+      }else{
+        foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
+      }
+    }
+    return foodResponseList;
   }
 
   public Food getFoodById(Long id){
