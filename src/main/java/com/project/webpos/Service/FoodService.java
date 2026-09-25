@@ -144,10 +144,18 @@ public class FoodService {
   }
 
   public List<FoodResponse> getFoodByCategory(String categoryType) {
-    if(categoryService.getCategory(categoryType)){
+    if(categoryService.isCategoryExisting(categoryType)){
       List<Food> foods = foodRepository.findByCategory_code(categoryType);
-      
-      return foodMapper.toResponseList(foods);
+      List<FoodResponse> foodResponseList = new ArrayList<>();
+      for(Food food : foods){
+        if(food.getWithVariant()){
+          foodResponseList.add(foodMapper.toResponse(food));
+        }else{
+          foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
+        }
+      }
+
+      return foodResponseList;
     }
 
     // Move this to global exception handler
