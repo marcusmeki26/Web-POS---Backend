@@ -18,7 +18,7 @@ public class CategoryService {
     return categoryRepository.findAll();
   }
   
-  public boolean getCategory(String category){
+  public boolean isCategoryExisting(String category){
     categoryRepository.findById(category)
               .orElseThrow(() -> new RuntimeException("Not Found"));
 
