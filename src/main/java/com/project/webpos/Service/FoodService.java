@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
+import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
 import com.project.webpos.Entity.Size;
+import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Mapper.FoodMapper;
 import com.project.webpos.Repository.FoodRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -39,6 +42,11 @@ public class FoodService {
     return foodResponseList;
   }
 
+  /**
+   * Returns {@code Food} object based on the specified food id 
+   * @param id the id of the food to be searched
+   * @return an object of {@code Food}
+   */
   public Food getFoodById(Long id){
     return foodRepository.findById(id)
       .orElseThrow(() -> new RuntimeException("No existing food"));
@@ -143,6 +151,11 @@ public class FoodService {
 
   }
 
+  /**
+   * Returns a type of {@code FoodResponse} that filters based on its category.
+   * @param categoryType The category type of {@code Category} entity
+   * @return a {@code List<FoodResponse>}
+   */
   public List<FoodResponse> getFoodByCategory(String categoryType) {
     if(categoryService.isCategoryExisting(categoryType)){
       List<Food> foods = foodRepository.findByCategory_code(categoryType);
@@ -160,5 +173,52 @@ public class FoodService {
 
     // Move this to global exception handler
     throw new RuntimeException("There was an error during fetching of menu.");
+  }
+
+  /**
+   * Updates food detail based on food id
+   * @param patchRequest An object of {@code patchRequest}
+   * @param id The id of {@code Table} entity to be updated
+   * @return None
+   */
+  @Transactional 
+  public void patchFoodById(FoodPatchRequest patchRequest, Long id){
+    Food food = getFoodById(id);
+    food.setFoodName(patchRequest.getName());
+    food.setShortFoodDesc(patchRequest.getShortDesc());
+    food.setWithVariant(patchRequest.getWithVariant());
+    food.setShortFoodDesc(patchRequest.getShortDesc());
+    
+    if(food.getWithVariant()){
+      food.setPrice(BigDecimal.ZERO);
+      productVariantService.patchProdVarByFoodId(food, patchRequest.getVariants());
+    }
+    else{
+      food.setPrice(patchRequest.getPrice());
+      inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity());
+    }
+
+    Category category = categoryService.getCategoryInit(patchRequest.getCategory());
+    food.setCategory(category);
+
+    foodRepository.save(food);
+  }
+
+  /**
+   * Deletes a record based on the specified {@code Food} id and {@code Size} id. Also deletes record from {@code Inventory} entity & {@code ProductVariant} entity
+   * @param foodId the value of {@code Food} id to be searched
+   * @param sizeId the value of {@code Size} id to be searched
+   */
+  public void deleteByFoodIdAndSizeId(Long foodId, Integer sizeId){
+    ProductVariant productVariant = productVariantService.getProductVariantByFoodAndSize(foodId, sizeId);
+    if(productVariant == null)
+      throw new RuntimeException("No existing product variant");
+
+    Inventory inventory = inventoryService.getInventoryByFoodIdAndProductVariantId(foodId, productVariant.getId());
+    if(inventory == null)
+      throw new RuntimeException("No existing inventory");
+
+    inventoryService.deleteInventory(inventory);
+    productVariantService.deteleProductVariant(productVariant);
   }
 }
