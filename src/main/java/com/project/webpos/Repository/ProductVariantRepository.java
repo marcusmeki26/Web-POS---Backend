@@ -10,4 +10,5 @@ import com.project.webpos.Entity.ProductVariant;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Integer>{
   List<ProductVariant> findByFood_id(Long id);
+  ProductVariant findByFoodIdAndSizeId(Long food, Integer size);
 }
