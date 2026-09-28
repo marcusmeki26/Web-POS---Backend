@@ -48,7 +48,7 @@ public class OrderService {
 
   /**
    * Gets the {@code List<OrderList>} and returns it in a {@code List<OrderResponse>} format
-   * @param tableId 
+   * @param tableId the id of {@code Table} entity
    * @return {@code List<OrderReponse>}
    */
   public List<OrderResponse> getOrderByTableId(Integer tableId){
