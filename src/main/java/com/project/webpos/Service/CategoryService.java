@@ -25,6 +25,11 @@ public class CategoryService {
     return true;
   }
 
+  /**
+   * Returns an object of {@code Category} based on its id
+   * @param category the id of {@code Category} to be searched
+   * @return an object of {@code Cateogry}
+   */
   public Category getCategoryInit(String category){
     return categoryRepository.findById(category)
               .orElseThrow(() -> new RuntimeException("Not Found"));
