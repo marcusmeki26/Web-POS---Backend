@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
-import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
-import com.project.webpos.Entity.Size;
+import com.project.webpos.Entity.DTO.FoodCreateRequest;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Mapper.FoodMapper;
@@ -25,9 +25,38 @@ public class FoodService {
   private final FoodRepository foodRepository;
   private final CategoryService categoryService;
   private final ProductVariantService productVariantService;
-  private final SizeService sizeService;
   private final InventoryService inventoryService;
   private final FoodMapper foodMapper;
+  private final FileStorageService fileStorageService;
+
+  @Transactional
+  public void setFood(FoodCreateRequest request, MultipartFile file){
+    if(!request.getWithVariant() && request.getPrice() == null)
+      throw new RuntimeException("price cannot be null");
+
+    if(!request.getWithVariant() && request.getQuantity() == null)
+      throw new RuntimeException("quantity cannot be null");
+
+    Food food = new Food();
+    food.setFoodName(request.getFoodName());
+    food.setShortFoodDesc(request.getShortFoodDesc());
+    food.setPrice(request.getPrice());
+    food.setWithVariant(request.getWithVariant());
+    food.setImagePath(fileStorageService.saveFile(file));
+
+    Category category = categoryService.getCategory(request.getCategory());
+    food.setCategory(category);
+
+    Food savedFood = foodRepository.save(food);
+
+    if(request.getVariants().size() > 0){
+      request.getVariants().forEach(variant -> {
+        inventoryService.setInventory(savedFood, variant.getSizeQuantity(), productVariantService.setProductVariant(savedFood, variant));
+      });
+    }else{
+      inventoryService.setInventory(savedFood, request.getQuantity());
+    }
+  }
 
   public List<FoodResponse> getFoodList() {
     List<Food> foodList = foodRepository.findAll();
@@ -50,105 +79,6 @@ public class FoodService {
   public Food getFoodById(Long id){
     return foodRepository.findById(id)
       .orElseThrow(() -> new RuntimeException("No existing food"));
-  }
-
-  // Used for initializing menu (not permanent)
-  public void setFoodInit() {
-    Food food1 = new Food();
-    food1.setFoodName("Overloaded French Fries");
-    food1.setShortFoodDesc("Overloaded FF");
-    food1.setPrice(BigDecimal.valueOf(85.00));
-    food1.setImagePath("");
-
-    Category category = categoryService.getCategoryInit("APPETIZER");
-    food1.setCategory(category);
-    foodRepository.save(food1);
-
-    inventoryService.setInventoryInit(food1, 3);
-
-    Food food2 = new Food();
-    food2.setFoodName("Coke");
-    food2.setShortFoodDesc("Coke");
-    food2.setWithVariant(true);
-    food2.setImagePath("");
-
-    if(food2.getWithVariant())
-      food2.setPrice(BigDecimal.valueOf(0));
-
-    category = categoryService.getCategoryInit("BEVERAGE");
-    food2.setCategory(category);
-    foodRepository.save(food2);
-    
-    Size size1 = new Size();
-    size1 = sizeService.getSize(1);
-    Size size2 = new Size();
-    size2 = sizeService.getSize(2);
-    Size size3 = new Size();
-    size3 = sizeService.getSize(3);
-    productVariantService.postProdVarInit(food2, size1, 25.00);
-    productVariantService.postProdVarInit(food2, size2, 50.00);
-    productVariantService.postProdVarInit(food2, size3, 70.00);
-
-    // Can do this same logic on how to save into Inventory table
-    if(food2.getWithVariant()){
-      // The quantity should be on a list
-      List<Integer> qtyList = List.of(15, 3, 33);
-
-      List<ProductVariant> prodVariantList = productVariantService.getProdVarByFoodId(food2.getId());
-      
-      int index = 0;
-      for (ProductVariant prodVariant : prodVariantList) {
-        inventoryService.setInventoryInit(food2, prodVariant, qtyList.get(index));
-        index++;
-      }
-    }
-
-    Food food3 = new Food();
-    food3.setFoodName("Panna Cotta");
-    food3.setShortFoodDesc("Panna Cotta");
-    food3.setPrice(BigDecimal.valueOf(490.00));
-    food3.setImagePath("");
-    
-    category = categoryService.getCategoryInit("DESSERT");
-    food3.setCategory(category);
-    foodRepository.save(food3);
-    
-    inventoryService.setInventoryInit(food3, 49);
-
-    Food food4 = new Food();
-    food4.setFoodName("Sweet Chili Salmon");
-    food4.setShortFoodDesc("SC Salmon");
-    food4.setPrice(BigDecimal.valueOf(350.00));
-    food4.setImagePath("");
-    
-    category = categoryService.getCategoryInit("MAIN DISH");
-    food4.setCategory(category);
-    foodRepository.save(food4);
-
-    inventoryService.setInventoryInit(food4, 12);
-
-    Food food5 = new Food();
-    food5.setFoodName("Shrimp Cocktail");
-    food5.setShortFoodDesc("Shrimp Cocktail");
-    food5.setPrice(BigDecimal.valueOf(599.00));
-    food5.setImagePath("");
-    
-    category = categoryService.getCategoryInit("APPETIZER");
-    food5.setCategory(category);
-    foodRepository.save(food5);
-
-    inventoryService.setInventoryInit(food5, 0);
-    // Since it will be a JSON object
-    // Get the object for prod variant then loop from there
-    // if(food2.getWithVariant()){
-    //   Integer sumQty = 0;
-    //   for (ProductVariant prodVarirant: productVariantService.getProdVarByFoodId(food2.getId())) {
-    //     sumQty += prodVarirant.getQuantity();
-    //   }
-
-    //   food2.setQuantity(sumQty);
-    // }
-
   }
 
   /**
@@ -198,7 +128,7 @@ public class FoodService {
       inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity());
     }
 
-    Category category = categoryService.getCategoryInit(patchRequest.getCategory());
+    Category category = categoryService.getCategory(patchRequest.getCategory());
     food.setCategory(category);
 
     foodRepository.save(food);
@@ -208,17 +138,29 @@ public class FoodService {
    * Deletes a record based on the specified {@code Food} id and {@code Size} id. Also deletes record from {@code Inventory} entity & {@code ProductVariant} entity
    * @param foodId the value of {@code Food} id to be searched
    * @param sizeId the value of {@code Size} id to be searched
+   * @return None
    */
   public void deleteByFoodIdAndSizeId(Long foodId, Integer sizeId){
     ProductVariant productVariant = productVariantService.getProductVariantByFoodAndSize(foodId, sizeId);
-    if(productVariant == null)
-      throw new RuntimeException("No existing product variant");
+    
+    inventoryService.deleteByFoodIdAndProductVariantId(foodId, productVariant.getId());
+    productVariantService.deleteProductVariant(productVariant);
+  }
 
-    Inventory inventory = inventoryService.getInventoryByFoodIdAndProductVariantId(foodId, productVariant.getId());
-    if(inventory == null)
-      throw new RuntimeException("No existing inventory");
+  /**
+   * Deletes a record based on the specified id of {@code Food}
+   * @param foodId the id of {@code Food} entity to delete
+   * @return None
+   */
+  public void deleteFood(Long foodId){
+    Food food = getFoodById(foodId);
+    // Check if working ang implementation :REMOVE-COMMENT
+    if(food.getWithVariant()){
+      productVariantService.deleteByFoodIdAndInventory(foodId);
+    }else{
+      inventoryService.deleteByFoodId(foodId);
+    }
 
-    inventoryService.deleteInventory(inventory);
-    productVariantService.deteleProductVariant(productVariant);
+    foodRepository.delete(food);
   }
 }

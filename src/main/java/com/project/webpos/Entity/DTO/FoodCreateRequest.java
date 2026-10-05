@@ -1,19 +1,25 @@
 package com.project.webpos.Entity.DTO;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
 public class FoodCreateRequest {
+  @NotEmpty (message = "food name is required")
   private String foodName;
+  @NotEmpty (message = "short description is required")
   private String shortFoodDesc;
   private BigDecimal price;
   private Integer quantity;
-  private MultipartFile imagePath;
-  private String categoryType;
+  @NotNull (message = "category should is required")
+  private String category;
+  private Boolean withVariant;
+  private List<ProductVariantCreateRequest> variants;
 }
