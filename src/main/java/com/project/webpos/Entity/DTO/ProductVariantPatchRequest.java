@@ -9,12 +9,12 @@ import lombok.Setter;
 @Getter 
 @Setter 
 public class ProductVariantPatchRequest {
-  @NotNull(message = "size id should not be null")
+  @NotNull(message = "size id is required")
   private Integer sizeId;
-  @NotNull (message = "size price should not be empty or null")
+  @NotNull (message = "size price is required")
   private BigDecimal sizePrice;
-  @NotNull (message = "size qantity should not be empty or null")
+  @NotNull (message = "size qantity is required")
   private Integer sizeQuantity;
-  @NotNull (message = "old size id shout not be null")
+  @NotNull (message = "old size id is required")
   private Integer sizeOldId;
 }
