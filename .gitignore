@@ -34,3 +34,6 @@ build/
 
 ### TEXT FILE ###
 *.txt
+
+### DATABASE ###
+# database backup
