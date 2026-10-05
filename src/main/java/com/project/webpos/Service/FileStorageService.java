@@ -61,4 +61,8 @@ public class FileStorageService {
 
         return storedFilename;
   }
+
+  public Path getPath(){
+    return uploadPath;
+  }
 }
