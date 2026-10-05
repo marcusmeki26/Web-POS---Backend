@@ -1,6 +1,5 @@
 package com.project.webpos.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -8,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.ProductVariant;
 import com.project.webpos.Entity.Size;
+import com.project.webpos.Entity.DTO.ProductVariantCreateRequest;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
 import com.project.webpos.Repository.ProductVariantRepository;
 
@@ -20,14 +20,21 @@ public class ProductVariantService {
   private final SizeService sizeService;
   private final InventoryService inventoryService;
 
-  // Used for initializing menu (not permanent)
-  public void postProdVarInit(Food food, Size size, Double price){
-    ProductVariant prodVar = new ProductVariant();
-    prodVar.setFood(food);
-    prodVar.setSize(size);
-    prodVar.setPrice(BigDecimal.valueOf(price));
+  /**
+   * Creates a new record of {@code ProductVariant}
+   * @param food an object of {@code Food}
+   * @param price the price of the {@code ProductVariant}
+   * @return an object of {@code ProductVariant}
+   */
+  public ProductVariant setProductVariant(Food food, ProductVariantCreateRequest variant){
+    ProductVariant productVariant = new ProductVariant();
+    productVariant.setPrice(variant.getSizePrice());
+    productVariant.setFood(food);
 
-    productVariantRepository.save(prodVar);
+    Size size = sizeService.getSize(variant.getSizeId());
+    productVariant.setSize(size);
+    
+    return productVariantRepository.save(productVariant);
   }
 
   /**
@@ -85,7 +92,32 @@ public class ProductVariantService {
    * Deletes a record
    * @param productVariant an object of {@code ProductVariant}
    */
-  public void deteleProductVariant(ProductVariant productVariant){
+  public void deleteProductVariant(ProductVariant productVariant){
     productVariantRepository.delete(productVariant);
+  }
+
+  // Can delete if no service will use this :REMOVE-COMMENT
+  // public ProductVariant deleteByFoodAndSize(Long foodId, Integer sizeId){
+  //   ProductVariant productVariant = getProductVariantByFoodAndSize(foodId, sizeId);
+  //   if(productVariant == null)
+  //     throw new RuntimeException("No existing product variant");
+
+  //   deleteProductVariant(productVariant);
+
+  //   return productVariant;
+  // }
+
+  /**
+   * Deletes the record on {@code ProductVariant} entity by its food id & {@code Inventory} entity by its food id & product variant id
+   * @param foodId the id of {@code Food} entity to be deleted
+   */
+  public void deleteByFoodIdAndInventory(Long foodId){
+    List<ProductVariant> variants = getProdVarByFoodId(foodId);
+    if(variants.size() > 0 || variants != null){
+      variants.forEach(variant -> {
+        inventoryService.deleteByFoodIdAndProductVariantId(foodId, variant.getId());
+        deleteProductVariant(variant);
+      });
+    }
   }
 }
