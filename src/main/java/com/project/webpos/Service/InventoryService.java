@@ -23,14 +23,29 @@ public class InventoryService {
 
     inventoryRepository.save(inventory);
   }
-
-  public void setInventoryInit(Food food, ProductVariant productVariant, Integer qty){
+  
+  /**
+   * Inserts new record into {@code Inventory} for {@code Food} without variant
+   * @param food
+   * @param quantity
+   */
+  public void setInventory(Food food, Integer quantity){
     Inventory inventory = new Inventory();
+    inventory.setFood(food);
+    inventory.setQuantity(quantity);
+    inventoryRepository.save(inventory);
+  }
 
+  /**
+   * Inserts new record into {@code Inventory} for {@code Food} with variant
+   * @param food
+   * @param quantity
+   */
+  public void setInventory(Food food, Integer quantity, ProductVariant productVariant){
+    Inventory inventory = new Inventory();
     inventory.setFood(food);
     inventory.setProductVariant(productVariant);
-    inventory.setQuantity(qty);
-
+    inventory.setQuantity(quantity);
     inventoryRepository.save(inventory);
   }
 
@@ -105,5 +120,28 @@ public class InventoryService {
    */
   public void deleteInventory(Inventory inventory){
     inventoryRepository.delete(inventory);
+  }
+  
+  /**
+   * Deletes a record that matches the food id and product variant id
+   * @param foodId the id of {@code Food} entity to be deleted
+   * @param prodVarId the id of {@code ProductVariant} entity to be deleted
+   * @return None
+   */
+  public void deleteByFoodIdAndProductVariantId(Long foodId, Integer prodVarId){
+    Inventory inventory = getInventoryByFoodIdAndProductVariantId(foodId, prodVarId);
+    if(inventory == null)
+      throw new RuntimeException("No existing inventory");
+
+    deleteInventory(inventory);
+  }
+
+  /**
+   * Deletes a record on {@code Inventory} entity that matches the food id.
+   * @param foodId the id of {@code Food} entity to be deleted
+   * @return None
+   */
+  public void deleteByFoodId(Long foodId){
+    deleteInventory(getInventoryByFoodAndWithoutVariant(foodId));
   }
 }
