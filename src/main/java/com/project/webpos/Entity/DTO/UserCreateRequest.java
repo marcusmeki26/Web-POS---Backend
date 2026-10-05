@@ -15,8 +15,8 @@ public class UserCreateRequest {
   private String nameOnReceipt;
   @NotNull(message = "A user should have a role")
   private UserRole userRole;
-  @NotEmpty(message = "Username should not be blank")
+  @NotEmpty(message = "Username is required")
   private String username;
-  @NotEmpty(message = "Password should not be blank")
+  @NotEmpty(message = "Password is required")
   private String password;
 }
