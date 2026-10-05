@@ -2,6 +2,7 @@ package com.project.webpos.Controller.v1;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,8 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.project.webpos.Entity.DTO.FoodCreateRequest;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Service.FoodService;
@@ -37,9 +41,15 @@ public class FoodController {
     return ResponseEntity.ok(foodService.getFoodList());
   }
 
-  @PostMapping
-  public void setFood(){
-    foodService.setFoodInit();
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('OWNER')")
+  public ResponseEntity<Void> setFood(
+    @Valid @RequestPart("food") FoodCreateRequest foodCreateRequest,
+    @RequestPart("image") MultipartFile file
+  ){
+    // foodService.setFoodInit();
+    foodService.setFood(foodCreateRequest, file);
+    return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/{foodId}")
@@ -53,11 +63,21 @@ public class FoodController {
   }
 
   @DeleteMapping("/{foodId}/{sizeId}")
+  @PreAuthorize("hasRole('OWNER')")
   public ResponseEntity<Void> deleteByFoodIdAndSizeId(
     @PathVariable Long foodId,
     @PathVariable Integer sizeId
   ){
     foodService.deleteByFoodIdAndSizeId(foodId, sizeId);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/{foodId}")
+  @PreAuthorize("hasRole('OWNER')")
+  public ResponseEntity<Void> deleteFood(
+    @PathVariable Long foodId
+  ){
+    foodService.deleteFood(foodId);
     return ResponseEntity.ok().build();
   }
 }
