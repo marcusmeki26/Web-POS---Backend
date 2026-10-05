@@ -1,9 +1,16 @@
 package com.project.webpos.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,6 +21,7 @@ import com.project.webpos.Entity.DTO.FoodCreateRequest;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Mapper.FoodMapper;
+import com.project.webpos.Record.FoodImageOnly;
 import com.project.webpos.Repository.FoodRepository;
 
 import jakarta.transaction.Transactional;
@@ -28,35 +36,6 @@ public class FoodService {
   private final InventoryService inventoryService;
   private final FoodMapper foodMapper;
   private final FileStorageService fileStorageService;
-
-  @Transactional
-  public void setFood(FoodCreateRequest request, MultipartFile file){
-    if(!request.getWithVariant() && request.getPrice() == null)
-      throw new RuntimeException("price cannot be null");
-
-    if(!request.getWithVariant() && request.getQuantity() == null)
-      throw new RuntimeException("quantity cannot be null");
-
-    Food food = new Food();
-    food.setFoodName(request.getFoodName());
-    food.setShortFoodDesc(request.getShortFoodDesc());
-    food.setPrice(request.getPrice());
-    food.setWithVariant(request.getWithVariant());
-    food.setImagePath(fileStorageService.saveFile(file));
-
-    Category category = categoryService.getCategory(request.getCategory());
-    food.setCategory(category);
-
-    Food savedFood = foodRepository.save(food);
-
-    if(request.getVariants().size() > 0){
-      request.getVariants().forEach(variant -> {
-        inventoryService.setInventory(savedFood, variant.getSizeQuantity(), productVariantService.setProductVariant(savedFood, variant));
-      });
-    }else{
-      inventoryService.setInventory(savedFood, request.getQuantity());
-    }
-  }
 
   public List<FoodResponse> getFoodList() {
     List<Food> foodList = foodRepository.findAll();
@@ -103,6 +82,69 @@ public class FoodService {
 
     // Move this to global exception handler
     throw new RuntimeException("There was an error during fetching of menu.");
+  }
+
+  /**
+   * Returns the image of a {@code Food} entity based on its id
+   * @param foodId the id of a {@code Food} entity to be searched
+   * @return
+   */
+  public ResponseEntity<Resource> getImage(Long foodId){
+    String imageName = getImageByFoodId(foodId);
+    Path path = fileStorageService.getPath();
+    try{
+      Path imagePath = path.resolve(imageName).normalize();
+      Resource resource = new UrlResource(imagePath.toUri());
+      // Gets the type of content and appends it to the header
+      String contentType = Files.probeContentType(imagePath);
+      if(contentType == null)
+        contentType = "application/octet-stream";
+      if(resource.exists() || resource.isReadable()){
+          return ResponseEntity.ok()
+                  .contentType(MediaType.parseMediaType(contentType))
+                  .body(resource);
+      }
+      return ResponseEntity.notFound().build();
+    }catch(RuntimeException | IOException e){
+      e.printStackTrace();
+      return ResponseEntity.notFound().build();
+    }
+  }
+
+  public String getImageByFoodId(Long foodId){
+    FoodImageOnly foodImageOnly = foodRepository.findProjectedById(foodId)
+                                    .orElseThrow(() -> new RuntimeException("No existing food"));
+
+    return foodImageOnly.imageName();
+  }
+
+  @Transactional
+  public void setFood(FoodCreateRequest request, MultipartFile file){
+    if(!request.getWithVariant() && request.getPrice() == null)
+      throw new RuntimeException("price cannot be null");
+
+    if(!request.getWithVariant() && request.getQuantity() == null)
+      throw new RuntimeException("quantity cannot be null");
+
+    Food food = new Food();
+    food.setFoodName(request.getFoodName());
+    food.setShortFoodDesc(request.getShortFoodDesc());
+    food.setPrice(request.getPrice());
+    food.setWithVariant(request.getWithVariant());
+    food.setImageName(fileStorageService.saveFile(file));
+
+    Category category = categoryService.getCategory(request.getCategory());
+    food.setCategory(category);
+
+    Food savedFood = foodRepository.save(food);
+
+    if(request.getVariants().size() > 0){
+      request.getVariants().forEach(variant -> {
+        inventoryService.setInventory(savedFood, variant.getSizeQuantity(), productVariantService.setProductVariant(savedFood, variant));
+      });
+    }else{
+      inventoryService.setInventory(savedFood, request.getQuantity());
+    }
   }
 
   /**

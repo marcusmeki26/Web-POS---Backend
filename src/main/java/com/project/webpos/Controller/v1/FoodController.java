@@ -2,6 +2,7 @@ package com.project.webpos.Controller.v1;
 
 import java.util.List;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,6 +40,13 @@ public class FoodController {
       return ResponseEntity.ok(foodService.getFoodByCategory(categoryType));
 
     return ResponseEntity.ok(foodService.getFoodList());
+  }
+
+  @GetMapping("/image/{foodId}")
+  public ResponseEntity<Resource> getImage(
+    @PathVariable Long foodId
+  ){
+    return foodService.getImage(foodId);
   }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
