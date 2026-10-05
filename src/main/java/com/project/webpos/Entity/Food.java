@@ -38,7 +38,7 @@ public class Food {
   private Boolean withVariant = false;
 
   @Column(nullable = false)
-  private String imagePath;
+  private String imageName;
 
   @OneToMany(mappedBy = "food")
   private List<ProductVariant> prodVariantList; 
