@@ -95,7 +95,8 @@ public class AuthService {
       if(user == null)
           return Map.of("Failed", "No Users Found");
 
-      Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole().getCaption()));
+      // Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole()));
+      Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole() + ""));
       return Map.of("access_token", jwtService.createAccessToken(user.getUsername(), authorities));
   }
 }
