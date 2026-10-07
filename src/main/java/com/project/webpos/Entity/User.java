@@ -10,6 +10,8 @@ import com.project.webpos.Enum.UserRole;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +39,7 @@ public class User {
   String nameOnReceipt;
 
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   UserRole userRole = UserRole.CASHIER;
 
   @Column(nullable = false, unique = true)
@@ -57,9 +60,5 @@ public class User {
     if(userId == null){
         userId = UUID.randomUUID().toString();
     }
-
-    // if(!role.startsWith("ROLE_")){
-    //     role = "ROLE_" + role.toUpperCase();
-    // }
   }
 }

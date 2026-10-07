@@ -41,7 +41,7 @@ public class OrderList {
   private String receiptNo;
 
   @Column(nullable = false)
-  @Enumerated(EnumType.ORDINAL)
+  @Enumerated(EnumType.STRING)
   private EntryType entryType = EntryType.ORDER;
 
   @Column(nullable = false)
