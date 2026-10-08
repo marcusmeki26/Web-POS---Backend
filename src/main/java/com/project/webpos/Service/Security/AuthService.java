@@ -17,14 +17,17 @@ import com.project.webpos.Entity.User;
 import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.UserCreateRequest;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
-import com.project.webpos.Enum.UserRole;
+import com.project.webpos.Exception.InvalidCombinationException;
+import com.project.webpos.Exception.UserNotFoundException;
 import com.project.webpos.Repository.UserRepository;
 
 import io.jsonwebtoken.lang.Assert;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor  
+@Slf4j
 public class AuthService {
   private final AuthenticationManager authenticationManager;
   private final UserRepository userRepository;
@@ -36,10 +39,10 @@ public class AuthService {
    * @param newUser value of {@code UserCreateRequest}
    */
   public void createUser(UserCreateRequest newUser){
-    Assert.notNull(newUser, "User should not be null");
-    Assert.notNull(newUser.getUsername(), "Username should not be null");
-    Assert.notNull(newUser.getPassword(), "Password should not be null");
-    Assert.notNull(newUser.getUserRole(), "A user should have a role");
+    Assert.notNull(newUser, "request not existing");
+    Assert.hasText(newUser.getUsername(), "username is required");
+    Assert.hasText(newUser.getPassword(), "password is required");
+    Assert.notNull(newUser.getUserRole(), "role is required");
 
     User user = new User();
     user.setFirstname(newUser.getFirstname());
@@ -51,52 +54,41 @@ public class AuthService {
     userRepository.save(user);
   }
 
-  // =================================================================================================================
-  // Creates a temporary user that has an owner role
-  // =================================================================================================================
-  public void createUserTemp(){
-    // Creates a temp owner user for adding cashier and manager.
-    // Move to user service since no authentication like JWT is needed.
-    User user = new User();
-    user.setFirstname("Marcus");
-    user.setLastname("Felixmeña");
-    user.setUserRole(UserRole.OWNER);
-    user.setUsername("marcus23");
-    user.setPassword(encoder.encode("nullsir"));
-    userRepository.save(user);
-  }
-
   /**
    * Authentication and generation of Json Web Token (JWT)
    * @param creds a value of {@code UserLoginCreateRequest}
    * @return {@code Map<String,String>} that contains access token & refresh token
    */
   public Map<String,String> login(UserTokenCreateRequest creds){
+    Assert.notNull(creds, "request not existing");
+    Assert.hasText(creds.getUsername(), " username is required");
+    Assert.hasText(creds.getPassword(), " password is required");
+
     Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(creds.getUsername(), creds.getPassword())
     ); // The authenticate method will call the AuthenticationProvider and verify if the user is valid. The Authentication object will receive the UserPrincipal if there is a user. Will go to UserDetailService
 
     if(authentication.isAuthenticated()){ // if the user exist and valid
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        log.info("User {} logged in", userPrincipal.getUserId());
         return jwtService.generateToken(userPrincipal.getUsername(), userPrincipal.getUserId(), userPrincipal.getAuthorities()); // calling the method to generate the token.
     }
 
-    return Map.of("Failed", "Wrong User");
+    throw new InvalidCombinationException("INVALID_USERNAME_AND_PASSWORD", "Username or password is incorrect");
+    // return Map.of("Failed", "Wrong User");
   }
 
   public Map<String, String> verifyRefreshToken(String refreshToken) {
-      String userId = jwtService.validateRefreshToken(refreshToken); // fetches the user id first to avoid null exceptions
+    Assert.hasText(refreshToken, "missing refresh token value");
 
-      // checks if the userId is null
-      if(userId == null)
-          return Map.of("Failed", "Invalid Refresh Token");
+    String userId = jwtService.validateRefreshToken(refreshToken); // fetches the user id first to avoid null exceptions
+    User user = userRepository.findByUserId(userId);
+    if(user == null)
+        throw new UserNotFoundException("NO_EXISTING_USER", "User does not exist", userId);
 
-      User user = userRepository.findByUserId(userId);
-      if(user == null)
-          return Map.of("Failed", "No Users Found");
-
-      // Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole()));
-      Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole() + ""));
-      return Map.of("access_token", jwtService.createAccessToken(user.getUsername(), authorities));
+    // Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole()));
+    Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole() + ""));
+    log.info("New access token is created to User {} with a refresh token of {}", user.getUserId(), refreshToken);
+    return Map.of("access_token", jwtService.createAccessToken(user.getUsername(), authorities));
   }
 }

@@ -17,6 +17,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.project.webpos.Exception.ExpiredTokenException;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -137,14 +139,10 @@ public class JWTService {
 
     // Method for checking/validating refresh token
     public String validateRefreshToken(String token){
-        if(token == null || token.trim().isEmpty()){
-            return null;
-        }
-
         if(isTokenRefreshExpired(token))
             return extractRefreshClaim(token, Claims::getSubject);
 
-        return null;
+        throw new ExpiredTokenException("EXPIRED_REFRESH_TOKEN", "Refresh token is expired");
     }
 
     private boolean isTokenRefreshExpired(String token) {

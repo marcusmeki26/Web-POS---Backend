@@ -10,10 +10,13 @@ import lombok.Setter;
 @Getter 
 @Setter 
 public class UserCreateRequest {
+  @NotNull(message = "firstname is required")
   private String firstname;
+  @NotNull(message = "lastname is required")
   private String lastname;
+  @NotNull(message = "name on receipt is required")
   private String nameOnReceipt;
-  @NotNull(message = "A user should have a role")
+  @NotNull(message = "role is required")
   private UserRole userRole;
   @NotEmpty(message = "Username is required")
   private String username;
