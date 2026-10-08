@@ -37,3 +37,6 @@ build/
 
 ### DATABASE ###
 # database backup
+
+### LOGS ###
+logs
