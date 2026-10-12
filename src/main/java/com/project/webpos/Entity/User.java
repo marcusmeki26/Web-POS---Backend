@@ -48,11 +48,13 @@ public class User {
   @Column(nullable = false)
   String password;
 
-  @CreationTimestamp 
-  private LocalDateTime timeCreated;
+  @CreationTimestamp
+  @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+  private LocalDateTime createdAt;
 
   @UpdateTimestamp 
-  private LocalDateTime timeUpdated;
+  @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+  private LocalDateTime updatedAt;
 
   // Called when .save() method is used
   @PrePersist

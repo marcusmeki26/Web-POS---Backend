@@ -1,7 +1,11 @@
 package com.project.webpos.Entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,4 +54,12 @@ public class Food {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "category_code")
   private Category category;
+
+  @CreationTimestamp
+  @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+  private LocalDateTime createdAt;
+
+  @UpdateTimestamp 
+  @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+  private LocalDateTime updatedAt;
 }
