@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.webpos.Entity.DTO.FoodCreateRequest;
+import com.project.webpos.Entity.DTO.FoodCreateResponse;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
+import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Service.FoodService;
 
@@ -51,23 +53,23 @@ public class FoodController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @PreAuthorize("hasRole('OWNER')")
-  public ResponseEntity<Void> setFood(
+  public ResponseEntity<FoodCreateResponse> setFood(
     @Valid @RequestPart("food") FoodCreateRequest foodCreateRequest,
     @RequestPart("image") MultipartFile file
   ){
     // foodService.setFoodInit();
-    foodService.setFood(foodCreateRequest, file);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.ok().body(foodService.setFood(foodCreateRequest, file));
   }
 
   @PatchMapping("/{foodId}")
   @PreAuthorize("hasRole('OWNER')")
-  public ResponseEntity<Void> patchFoodById(
+  public ResponseEntity<FoodPatchResponse> patchFoodById(
     @Valid @RequestBody FoodPatchRequest patchRequest,
     @PathVariable Long foodId
   ){
-    foodService.patchFoodById(patchRequest, foodId);
-    return ResponseEntity.ok().build();
+    // foodService.patchFoodById(patchRequest, foodId);
+    // return ResponseEntity.ok().build();
+    return ResponseEntity.ok().body(foodService.patchFoodById(patchRequest, foodId));
   }
 
   @DeleteMapping("/{foodId}/{sizeId}")
@@ -77,7 +79,7 @@ public class FoodController {
     @PathVariable Integer sizeId
   ){
     foodService.deleteByFoodIdAndSizeId(foodId, sizeId);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 
   @DeleteMapping("/{foodId}")
@@ -86,6 +88,6 @@ public class FoodController {
     @PathVariable Long foodId
   ){
     foodService.deleteFood(foodId);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }

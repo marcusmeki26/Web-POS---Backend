@@ -11,24 +11,35 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.ProductVariant;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.FoodCreateRequest;
+import com.project.webpos.Entity.DTO.FoodCreateResponse;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
+import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
+import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
+import com.project.webpos.Exception.ConflictException;
+import com.project.webpos.Exception.InvalidRequestException;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Mapper.FoodMapper;
 import com.project.webpos.Record.FoodImageOnly;
 import com.project.webpos.Repository.FoodRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FoodService {
   private final FoodRepository foodRepository;
   private final CategoryService categoryService;
@@ -37,8 +48,13 @@ public class FoodService {
   private final FoodMapper foodMapper;
   private final FileStorageService fileStorageService;
 
+  /**
+   * Retrieves all the record from {@code Food} entity that is active and not deleted
+   * @return an object of {@code List<FoodResponse>}
+   */
   public List<FoodResponse> getFoodList() {
-    List<Food> foodList = foodRepository.findAll();
+    // List<Food> foodList = foodRepository.findAll();
+    List<Food> foodList = foodRepository.findActiveAndNotDeleted();
     List<FoodResponse> foodResponseList = new ArrayList<>();
     for(Food food : foodList){
       if(food.getWithVariant()){
@@ -57,7 +73,7 @@ public class FoodService {
    */
   public Food getFoodById(Long id){
     return foodRepository.findById(id)
-      .orElseThrow(() -> new RuntimeException("No existing food"));
+      .orElseThrow(() -> new ResourceNotFoundException("INVALID_FOOD", "food does not exist"));
   }
 
   /**
@@ -66,22 +82,18 @@ public class FoodService {
    * @return a {@code List<FoodResponse>}
    */
   public List<FoodResponse> getFoodByCategory(String categoryType) {
-    if(categoryService.isCategoryExisting(categoryType)){
-      List<Food> foods = foodRepository.findByCategory_code(categoryType);
-      List<FoodResponse> foodResponseList = new ArrayList<>();
-      for(Food food : foods){
-        if(food.getWithVariant()){
-          foodResponseList.add(foodMapper.toResponse(food));
-        }else{
-          foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
-        }
+    categoryService.isCategoryExisting(categoryType);
+    List<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(categoryType);
+    List<FoodResponse> foodResponseList = new ArrayList<>();
+    for(Food food : foods){
+      if(food.getWithVariant()){
+        foodResponseList.add(foodMapper.toResponse(food));
+      }else{
+        foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
       }
-
-      return foodResponseList;
     }
 
-    // Move this to global exception handler
-    throw new RuntimeException("There was an error during fetching of menu.");
+    return foodResponseList;
   }
 
   /**
@@ -111,22 +123,37 @@ public class FoodService {
     }
   }
 
+  /**
+   * Retrieves the image path based on the specified food id
+   * @param foodId the value of food id to search
+   * @return a {@code String} of image name
+   */
   public String getImageByFoodId(Long foodId){
     FoodImageOnly foodImageOnly = foodRepository.findProjectedById(foodId)
-                                    .orElseThrow(() -> new RuntimeException("No existing food"));
+                                    .orElseThrow(() -> new ResourceNotFoundException("INVALID_FOOD", "food does not exist"));
 
     return foodImageOnly.imageName();
   }
 
+  /**
+   * Creates a new record of {@code Food} entity
+   * @param request an object of {@code FoodCreateRequest}
+   * @param file an object of {@code MultipartFile} that contains the image
+   */
   @Transactional
-  public void setFood(FoodCreateRequest request, MultipartFile file){
+  public FoodCreateResponse setFood(FoodCreateRequest request, MultipartFile file){
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
+
     if(!request.getWithVariant() && request.getPrice() == null)
-      throw new RuntimeException("price cannot be null");
+      throw new ConflictException("UNABLE_TO_SAVE", "CREATION", "price is required");
 
     if(!request.getWithVariant() && request.getQuantity() == null)
-      throw new RuntimeException("quantity cannot be null");
+      throw new ConflictException("UNABLE_TO_SAVE", "CREATION", "quantity is required");
 
     Food food = new Food();
+    food.setIsActive(true);
+    food.setIsDeleted(false);
     food.setFoodName(request.getFoodName());
     food.setShortFoodDesc(request.getShortFoodDesc());
     food.setPrice(request.getPrice());
@@ -145,6 +172,9 @@ public class FoodService {
     }else{
       inventoryService.setInventory(savedFood, request.getQuantity());
     }
+    
+    log.info("A new Food is added {} by User {}", savedFood.getId(), loggedUser.getId());
+    return foodMapper.toCreateResponse(savedFood);
   }
 
   /**
@@ -154,29 +184,47 @@ public class FoodService {
    * @return None
    */
   @Transactional 
-  public void patchFoodById(FoodPatchRequest patchRequest, Long id){
-    Food food = getFoodById(id);
-    food.setFoodName(patchRequest.getName());
-    food.setShortFoodDesc(patchRequest.getShortDesc());
-    food.setWithVariant(patchRequest.getWithVariant());
-    food.setShortFoodDesc(patchRequest.getShortDesc());
+  public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id){
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
+
     
+    Food food = getFoodById(id);
+    foodMapper.patchFood(patchRequest, food);
+
+    log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
+
+    if(food.getWithVariant() && !patchRequest.getVariants().isPresent())
+      throw new InvalidRequestException("INVALID_REQUEST", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
+
     if(food.getWithVariant()){
+      List<ProductVariantPatchRequest> prodVariants = new ArrayList<>();
+      patchRequest.getVariants()
+        .get()
+        .stream()
+        .forEach(variant -> {
+          ProductVariantPatchRequest prodVariant = new ProductVariantPatchRequest();
+          prodVariant.setSizeId(variant.getSizeId());
+          if(variant.getSizePrice() != null)
+            prodVariant.setSizePrice(variant.getSizePrice());
+          if(variant.getSizeQuantity() != null)
+            prodVariant.setSizeQuantity(variant.getSizeQuantity());
+          prodVariant.setSizeOldId(variant.getSizeOldId());
+          prodVariants.add(prodVariant);
+        });
       food.setPrice(BigDecimal.ZERO);
-      productVariantService.patchProdVarByFoodId(food, patchRequest.getVariants());
-    }
-    else{
-      food.setPrice(patchRequest.getPrice());
-      inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity());
+      productVariantService.patchProdVarByFoodId(food, prodVariants);
+    }else{
+      if(patchRequest.getQuantity().isPresent())
+        inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity().orElse(0));
     }
 
-    Category category = categoryService.getCategory(patchRequest.getCategory());
-    food.setCategory(category);
-
-    foodRepository.save(food);
+    log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
+    return foodMapper.toPatchResponse(foodRepository.save(food));
   }
 
   /**
+   * <b>NOTE: Does not delete {@code Food} entity</b> <br>
    * Deletes a record based on the specified {@code Food} id and {@code Size} id. Also deletes record from {@code Inventory} entity & {@code ProductVariant} entity
    * @param foodId the value of {@code Food} id to be searched
    * @param sizeId the value of {@code Size} id to be searched
@@ -190,19 +238,18 @@ public class FoodService {
   }
 
   /**
-   * Deletes a record based on the specified id of {@code Food}
+   * Soft deletes a record based on the specified id of {@code Food}
    * @param foodId the id of {@code Food} entity to delete
    * @return None
    */
   public void deleteFood(Long foodId){
-    Food food = getFoodById(foodId);
-    // Check if working ang implementation :REMOVE-COMMENT
-    if(food.getWithVariant()){
-      productVariantService.deleteByFoodIdAndInventory(foodId);
-    }else{
-      inventoryService.deleteByFoodId(foodId);
-    }
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
 
-    foodRepository.delete(food);
+    Food food = getFoodById(foodId);
+    food.setIsDeleted(true);
+    food.setIsActive(false);
+    foodRepository.save(food);
+    log.info("Food {} is soft deleted by user {}", food.getId(), loggedUser.getId());
   }
 }

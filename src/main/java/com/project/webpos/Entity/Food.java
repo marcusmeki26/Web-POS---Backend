@@ -24,13 +24,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Food {
-
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "food_id_seq")
   @SequenceGenerator(name = "food_id_seq", sequenceName = "food_id_sequence", initialValue = 10000, allocationSize = 1)
   private Long id;
   
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   private String foodName;
 
   @Column(nullable = false)
@@ -44,6 +43,12 @@ public class Food {
 
   @Column(nullable = false)
   private String imageName;
+
+  @Column(nullable = false)
+  private Boolean isActive;
+
+  @Column(nullable = false)
+  private Boolean isDeleted;
 
   @OneToMany(mappedBy = "food")
   private List<ProductVariant> prodVariantList; 

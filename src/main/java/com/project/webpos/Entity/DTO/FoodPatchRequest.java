@@ -3,26 +3,21 @@ package com.project.webpos.Entity.DTO;
 import java.math.BigDecimal;
 import java.util.List;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import org.openapitools.jackson.nullable.JsonNullable;
+
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter 
 @Setter 
 public class FoodPatchRequest {
-  // Name, Price, Category, Variants
-  @NotBlank(message = "name is required")
-  private String name;
-  @NotBlank(message = "short description is required")
-  private String shortDesc;
-  @NotNull(message = "price is required")
-  private BigDecimal price;
-  @NotNull(message = "quantity is required")
-  private Integer quantity;
-  @NotBlank(message = "category is required")  
-  private String category;  
-  @NotNull(message = "with variant is required")
-  private Boolean withVariant;
-  private List<ProductVariantPatchRequest> variants;
+  private JsonNullable<String> foodName = JsonNullable.undefined();
+  private JsonNullable<String> shortFoodDesc = JsonNullable.undefined();
+  private JsonNullable<BigDecimal> price = JsonNullable.undefined();
+  private JsonNullable<Integer> quantity = JsonNullable.undefined();
+  private JsonNullable<String> category = JsonNullable.undefined();
+  private JsonNullable<Boolean> withVariant = JsonNullable.undefined();
+  @Valid 
+  private JsonNullable<List<ProductVariantPatchRequest>> variants = JsonNullable.undefined();
 }
