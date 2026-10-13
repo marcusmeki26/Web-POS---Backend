@@ -185,42 +185,43 @@ public class FoodService {
    */
   @Transactional 
   public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id){
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-
-    
-    Food food = getFoodById(id);
-    foodMapper.patchFood(patchRequest, food);
-
-    log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
-
-    if(food.getWithVariant() && !patchRequest.getVariants().isPresent())
-      throw new InvalidRequestException("INVALID_REQUEST", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
-
-    if(food.getWithVariant()){
-      List<ProductVariantPatchRequest> prodVariants = new ArrayList<>();
-      patchRequest.getVariants()
-        .get()
-        .stream()
-        .forEach(variant -> {
-          ProductVariantPatchRequest prodVariant = new ProductVariantPatchRequest();
-          prodVariant.setSizeId(variant.getSizeId());
-          if(variant.getSizePrice() != null)
-            prodVariant.setSizePrice(variant.getSizePrice());
-          if(variant.getSizeQuantity() != null)
-            prodVariant.setSizeQuantity(variant.getSizeQuantity());
-          prodVariant.setSizeOldId(variant.getSizeOldId());
-          prodVariants.add(prodVariant);
-        });
-      food.setPrice(BigDecimal.ZERO);
-      productVariantService.patchProdVarByFoodId(food, prodVariants);
-    }else{
-      if(patchRequest.getQuantity().isPresent())
-        inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity().orElse(0));
+    if(patchRequestHasRecord(patchRequest)){
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
+  
+      Food food = getFoodById(id);
+      foodMapper.patchFood(patchRequest, food);
+  
+      if(food.getWithVariant() && !patchRequest.getVariants().isPresent())
+        throw new InvalidRequestException("INVALID_REQUEST", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
+  
+      if(food.getWithVariant()){
+        List<ProductVariantPatchRequest> prodVariants = new ArrayList<>();
+        patchRequest.getVariants()
+          .get()
+          .stream()
+          .forEach(variant -> {
+            ProductVariantPatchRequest prodVariant = new ProductVariantPatchRequest();
+            prodVariant.setSizeId(variant.getSizeId());
+            if(variant.getSizePrice() != null)
+              prodVariant.setSizePrice(variant.getSizePrice());
+            if(variant.getSizeQuantity() != null)
+              prodVariant.setSizeQuantity(variant.getSizeQuantity());
+            prodVariant.setSizeOldId(variant.getSizeOldId());
+            prodVariants.add(prodVariant);
+          });
+        food.setPrice(BigDecimal.ZERO);
+        productVariantService.patchProdVarByFoodId(food, prodVariants);
+      }else{
+        if(patchRequest.getQuantity().isPresent())
+          inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity().orElse(0));
+      }
+  
+      log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
+      return foodMapper.toPatchResponse(foodRepository.save(food));
     }
 
-    log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
-    return foodMapper.toPatchResponse(foodRepository.save(food));
+    return new FoodPatchResponse();
   }
 
   /**
@@ -251,5 +252,19 @@ public class FoodService {
     food.setIsActive(false);
     foodRepository.save(food);
     log.info("Food {} is soft deleted by user {}", food.getId(), loggedUser.getId());
+  }
+
+  // Utilities
+  private <T> boolean patchRequestHasRecord(FoodPatchRequest request){
+    if(request == null)
+      return false;
+
+    return (request.getFoodName().isPresent()
+            || request.getShortFoodDesc().isPresent()
+            || request.getCategory().isPresent()
+            || request.getPrice().isPresent()
+            || request.getQuantity().isPresent()
+            || request.getWithVariant().isPresent()
+            || request.getVariants().isPresent());
   }
 }
