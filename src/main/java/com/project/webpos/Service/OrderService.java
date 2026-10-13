@@ -15,6 +15,8 @@ import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
 import com.project.webpos.Enum.EntryType;
+import com.project.webpos.Exception.InvalidRequestException;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
 import com.project.webpos.Entity.DTO.OrderPaymentResponse;
 import com.project.webpos.Mapper.OrderMapper;
@@ -107,41 +109,36 @@ public class OrderService {
    * @param patchRequest The object of OrderPatchRequest class
    * @return true if updating is successful
    */
-  public Boolean patchOrder(Integer id, OrderPatchRequest patchRequest){
-    OrderList orderList = orderRepository.findById(id)
-          .orElseThrow(() -> new RuntimeException("Invalid order value"));
-    
-    if(orderList != null){
-      if(patchRequest.getQuantity() != null){
-        orderList.setQuantity(patchRequest.getQuantity());
-        BigDecimal price = orderList.getPrice();
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal newDiscAmt = BigDecimal.ZERO;
-        BigDecimal newVatAmt = BigDecimal.ZERO;
-        Integer qty = orderList.getQuantity();
-        Float discPercent = orderList.getDiscountPercent();      
+  public OrderList patchOrder(Integer id, OrderPatchRequest patchRequest){
+    if(orderPatchRequestHasRecord(patchRequest)){
+      OrderList orderList = getById(id);
+      
+      orderList.setQuantity(patchRequest.getQuantity().get());
+      BigDecimal price = orderList.getPrice();
+      BigDecimal amount = BigDecimal.ZERO;
+      BigDecimal newDiscAmt = BigDecimal.ZERO;
+      BigDecimal newVatAmt = BigDecimal.ZERO;
+      Integer qty = orderList.getQuantity();
+      Float discPercent = orderList.getDiscountPercent();      
 
-        if(orderList.getDiscountPercent() != Float.valueOf(0)){
-          newDiscAmt = price.multiply(BigDecimal.valueOf(qty)).multiply(BigDecimal.valueOf(discPercent / 100));
-          orderList.setDiscountAmount(newDiscAmt);
-        }
-
-        amount = price.multiply(BigDecimal.valueOf(qty)).subtract(newDiscAmt);
-        newVatAmt = amount.divide(BigDecimal.valueOf(1.12), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(.12));
-        orderList.setAmount(amount);
-        orderList.setVatAmount(newVatAmt);
+      if(orderList.getDiscountPercent() != Float.valueOf(0)){
+        newDiscAmt = price.multiply(BigDecimal.valueOf(qty)).multiply(BigDecimal.valueOf(discPercent / 100));
+        orderList.setDiscountAmount(newDiscAmt);
       }
 
-      if(patchRequest.getReceiptNo() != null){
-        orderList.setReceiptNo(patchRequest.getReceiptNo());
-      }
-
-      orderRepository.save(orderList);
-
-      return true;
+      amount = price.multiply(BigDecimal.valueOf(qty)).subtract(newDiscAmt);
+      newVatAmt = amount.divide(BigDecimal.valueOf(1.12), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(.12));
+      orderList.setAmount(amount);
+      orderList.setVatAmount(newVatAmt);
+  
+      // if(patchRequest.getReceiptNo().isPresent()){
+      //   orderList.setReceiptNo(patchRequest.getReceiptNo().get());
+      // }
+  
+      return orderRepository.save(orderList);
     }
 
-    return false;
+    return new OrderList();
   }
 
   public OrderList getOrderByFoodIdAndTableId(Long foodId, Integer tableId){
@@ -150,37 +147,39 @@ public class OrderService {
 
   public OrderList getById(Integer id){
     return orderRepository.findById(id)
-      .orElseThrow(() -> new RuntimeException("No existing order id"));
+      .orElseThrow(() -> new ResourceNotFoundException("NO_EXISTING_ORDER", "order does not exist"));
   }
 
-  // Updating of order into placed
-  public Boolean patchOrder(String receiptNo, OrderPatchRequest patchRequest){
-    List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
-    
-    if(orderList != null){
-      if(patchRequest.getTableNo() == null || patchRequest.getPlaced() == null)
-        throw new RuntimeException("Unable to update with the current value");
-
-      orderList.forEach(order -> {
-        if(patchRequest.getTableNo() != null){
-          TableList tableList = tableService.getTableById(patchRequest.getTableNo());
-          order.setTable(tableList);
-        }
-        
-        order.setPlaced(patchRequest.getPlaced());
-
-        if(patchRequest.getOrderType() != null){
-          OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType());
-          order.setOrderType(orderType);
-        }
-
-        orderRepository.save(order);
-      });
-
-      return true;
+  /**
+   * Assigns a table based on receipt no.
+   * @param receiptNo the receipt no of the order
+   * @param patchRequest an object of {@code OrderPatchRequest}
+   */
+  public void patchOrderByReceiptNo(String receiptNo, OrderPatchRequest patchRequest){
+    if(orderPatchRequestHasRecord(patchRequest)){
+      List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
+  
+      if(orderList != null){
+        if(patchRequest.getTableNo() == null || patchRequest.getPlaced() == null)
+          throw new InvalidRequestException("INVALID_VALUE", "assigning a table to a set of orders", "table no or placed status is required");
+  
+        orderList.forEach(order -> {
+          if(patchRequest.getTableNo() != null){
+            TableList tableList = tableService.getTableById(patchRequest.getTableNo().get());
+            order.setTable(tableList);
+          }
+          
+          order.setPlaced(patchRequest.getPlaced().get());
+  
+          if(patchRequest.getOrderType() != null){
+            OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType().get());
+            order.setOrderType(orderType);
+          }
+  
+          orderRepository.save(order);
+        });
+      }
     }
-
-    return false;
   }
 
   /**
@@ -188,13 +187,13 @@ public class OrderService {
    * @param receiptNo value of {@code String} the receipt no. of the table that has existing orders 
    * @param orderPatchRequests value of {@code List<OrderPatchRequest>} the order that will be added to the table
    */
-  public void patchAddedOrder(String receiptNo, List<OrderPatchRequest> orderPatchRequests){
+  public void addOrderToAnExistingOrder(String receiptNo, List<OrderCreateRequest> orderPatchRequests){
     orderPatchRequests.forEach(order -> {
       OrderList orderListSave, orderListDel;
       if(order.getSizeId() == null)
-        orderListSave = getOrderByFoodIdAndTableId(order.getNumber(), order.getTableNo());
+        orderListSave = getOrderByFoodIdAndTableId(order.getNumber(), order.getTableId());
       else // Query with sizes
-        orderListSave = orderRepository.findByNumberAndTableIdAndSizeId(order.getNumber(), order.getTableNo(), order.getSizeId());
+        orderListSave = orderRepository.findByNumberAndTableIdAndSizeId(order.getNumber(), order.getTableId(), order.getSizeId());
 
       if(orderListSave != null){ // Has existing record on the table
         orderListSave.setQuantity((orderListSave.getQuantity() + order.getQuantity()));
@@ -217,7 +216,7 @@ public class OrderService {
         orderList.setReceiptNo(receiptNo);
         orderList.setPlaced(true);
 
-        TableList tableList = tableService.getTableById(order.getTableNo());
+        TableList tableList = tableService.getTableById(order.getTableId());
         orderList.setTable(tableList);
         
         orderRepository.save(orderList);
@@ -225,35 +224,38 @@ public class OrderService {
     });
   }
 
-  // Updating of order when being retrieved
-  public Boolean patchRetrieveOrder(String receiptNo, OrderPatchRequest patchRequest){
-    List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
-    
-    if(orderList != null){
-      orderList.forEach(order -> {
-        if(patchRequest.getTableNo() != null){
-          TableList tableList = tableService.getTableById(patchRequest.getTableNo());
-          order.setTable(tableList);
-        }else{
-          order.setTable(null);
-        }
-        
-        order.setPlaced(patchRequest.getPlaced());
-
-        if(patchRequest.getOrderType() != null){
-          OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType());
-          order.setOrderType(orderType);
-        }else{
-          order.setOrderType(null);
-        }
-
-        orderRepository.save(order);
-      });
-
-      return true;
+  /**
+   * Retrieves the order from a table based on receipt no.
+   * @param receiptNo the receipt no of order
+   * @param patchRequest an object of {@code OrderPatchRequest}
+   * @return
+   */
+  public void patchRetrieveOrder(String receiptNo, OrderPatchRequest patchRequest){
+    if(orderPatchRequestHasRecord(patchRequest)){
+      List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
+      
+      if(orderList != null){
+        orderList.forEach(order -> {
+          if(patchRequest.getTableNo().get() != null){
+            TableList tableList = tableService.getTableById(patchRequest.getTableNo().get());
+            order.setTable(tableList);
+          }else{
+            order.setTable(null);
+          }
+          
+          order.setPlaced(patchRequest.getPlaced().get());
+  
+          if(patchRequest.getOrderType().get() != null){
+            OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType().get());
+            order.setOrderType(orderType);
+          }else{
+            order.setOrderType(null);
+          }
+  
+          orderRepository.save(order);
+        });
+      }
     }
-
-    return false;
   }
 
   /**
@@ -358,8 +360,6 @@ public class OrderService {
       if(ordersByPayment != null)
         transactionPaymentService.setTransactionPayment(ordersByPayment);
 
-      // Working moving to trans line and trans payment :REMOVE-COMMENT
-      // Next is move it on Transaction Summary table :REMOVE-COMMENT
       if(orders != null)
         transactionSummaryService.setTransactionSummary(orders);
 
@@ -396,5 +396,17 @@ public class OrderService {
     }
 
     return "";
+  }
+
+  private boolean orderPatchRequestHasRecord(OrderPatchRequest request){
+    if(request == null)
+      return false;
+
+    return (
+      request.getQuantity().isPresent() ||
+      request.getTableNo().isPresent() ||
+      request.getOrderType().isPresent() ||
+      request.getPlaced().isPresent()
+    );
   }
 }
