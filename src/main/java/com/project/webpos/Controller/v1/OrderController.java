@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
@@ -62,27 +63,39 @@ public class OrderController {
   }
 
   @PatchMapping("/{id}")
-  public ResponseEntity<Void> patchOrder(@PathVariable Integer id, @RequestBody OrderPatchRequest orderPatchRequest){
-    return orderService.patchOrder(id, orderPatchRequest) ?
-      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+  public ResponseEntity<OrderList> patchOrder(@PathVariable Integer id, @RequestBody OrderPatchRequest orderPatchRequest){
+    // return orderService.patchOrder(id, orderPatchRequest) ?
+    //   ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    // CHANGE OrderList -> OrderResponse :REMOVE-COMMENT
+    return ResponseEntity.ok().body(orderService.patchOrder(id, orderPatchRequest));
   }
 
   @PatchMapping("/receipt/{receiptNo}")
   public ResponseEntity<Void> patchOrderByReceiptNo(@PathVariable String receiptNo, @RequestBody OrderPatchRequest orderPatchRequest){
-    return orderService.patchOrder(receiptNo, orderPatchRequest) ?
-      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    // return orderService.patchOrderByReceiptNo(receiptNo, orderPatchRequest) ?
+    //   ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    orderService.patchOrderByReceiptNo(receiptNo, orderPatchRequest);
+    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/receipt/existing/{receiptNo}")
-  public ResponseEntity<Void> patchOrdersByReceiptNo(@PathVariable String receiptNo, @RequestBody List<OrderPatchRequest> orderPatchRequests){
-    orderService.patchAddedOrder(receiptNo, orderPatchRequests);
+  public ResponseEntity<Void> patchOrdersByReceiptNo(
+    @PathVariable String receiptNo, 
+    @RequestBody List<OrderCreateRequest> orderPatchRequests
+  ){
+    orderService.addOrderToAnExistingOrder(receiptNo, orderPatchRequests);
     return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/retrieve/{receiptNo}")
-  public ResponseEntity<Void> patchRetrieveOrderByReceiptNo(@PathVariable String receiptNo, @RequestBody OrderPatchRequest orderPatchRequest){
-    return orderService.patchRetrieveOrder(receiptNo, orderPatchRequest) ? 
-      ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+  public ResponseEntity<Void> patchRetrieveOrderByReceiptNo(
+    @PathVariable String receiptNo, 
+    @RequestBody OrderPatchRequest orderPatchRequest
+  ){
+    // return orderService.patchRetrieveOrder(receiptNo, orderPatchRequest) ? 
+    //   ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    orderService.patchRetrieveOrder(receiptNo, orderPatchRequest);
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping

@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrderCreateRequest {
+  private Integer id;
   private String receiptNo;
   private Long number;
   private String shortFoodDesc;
