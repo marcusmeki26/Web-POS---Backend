@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.DTO.CategoryCountResponse;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -14,15 +15,21 @@ import lombok.RequiredArgsConstructor;
 public class CategoryService {
   private final CategoryRepository categoryRepository;
 
+  /**
+   * Gets all the record inside {@code Category} entity
+   * @return an object of {@code List<Category>}
+   */
   public List<Category> getCategories(){
     return categoryRepository.findAll();
   }
   
-  public boolean isCategoryExisting(String category){
+  /**
+   * Performs a checking if the category exist without returning anything
+   * @param category the value of category to search
+   */
+  public void isCategoryExisting(String category){
     categoryRepository.findById(category)
-              .orElseThrow(() -> new RuntimeException("Not Found"));
-
-    return true;
+              .orElseThrow(() -> new ResourceNotFoundException("INVALID_CATEGORY", "category does not exist"));
   }
 
    /**
@@ -32,7 +39,7 @@ public class CategoryService {
    */
   public Category getCategory(String category){
     return categoryRepository.findById(category)
-              .orElseThrow(() -> new RuntimeException("Not Found"));
+              .orElseThrow(() -> new ResourceNotFoundException("INVALID_CATEGORY", "category does not exist"));
   }
 
   public List<CategoryCountResponse> getCategoriesCount() {
