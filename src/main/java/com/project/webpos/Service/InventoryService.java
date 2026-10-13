@@ -1,5 +1,6 @@
 package com.project.webpos.Service;
 
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Food;
@@ -80,7 +81,7 @@ public class InventoryService {
    * Updates/Inserts the record to {@code Inventory} entity. Should only be used to {@code Food} entity with variants
    * @param patchRequest an object of {@code FoodPatchRequest}
    */
-  public void patchInventoryByFoodIdWithVariant(ProductVariant productVariant, Food food, Integer quantity){
+  public void patchInventoryByFoodIdWithVariant(ProductVariant productVariant, Food food, JsonNullable<Integer> quantity){
     Inventory inventory = getInventoryByFoodAndProductVariant(food, productVariant);
     if(inventory == null){
       inventory = new Inventory();
@@ -94,7 +95,8 @@ public class InventoryService {
     }
     inventory.setFood(food);
     inventory.setProductVariant(productVariant);
-    inventory.setQuantity(quantity);
+    if(quantity != null)
+      inventory.setQuantity(quantity.orElse(0));
 
     inventoryRepository.save(inventory);
   }
