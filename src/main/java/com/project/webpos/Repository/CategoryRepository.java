@@ -12,7 +12,7 @@ public interface CategoryRepository extends JpaRepository<Category, String> {
 
   @Query("SELECT new com.project.webpos.Entity.DTO.CategoryCountResponse(c.code, COUNT(f)) " +
        "FROM Category c " +
-       "LEFT JOIN Food f ON f.category = c " +
+       "LEFT JOIN Food f ON f.category = c AND f.isActive = true AND f.isDeleted = false " +
        "GROUP BY c.code")
   List<CategoryCountResponse> getCategoriesCount();
 }
