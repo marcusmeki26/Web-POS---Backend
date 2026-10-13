@@ -1,5 +1,6 @@
 package com.project.webpos.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -79,7 +80,8 @@ public class ProductVariantService {
       if(productVariant == null)
         productVariant = new ProductVariant();
       productVariant.setFood(food);
-      productVariant.setPrice(variant.getSizePrice());
+      if(variant.getSizePrice() != null)
+        productVariant.setPrice(variant.getSizePrice().orElse(BigDecimal.ZERO));
       productVariant.setSize(size);
 
       productVariantRepository.save(productVariant);
