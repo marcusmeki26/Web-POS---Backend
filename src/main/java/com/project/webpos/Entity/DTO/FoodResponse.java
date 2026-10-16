@@ -15,7 +15,7 @@ public class FoodResponse {
   private BigDecimal price;
   private Boolean withVariant;
   private String imageName;
-  private String categoryType;
+  private CategoryResponse category;
   private List<InventoryResponse> inventory;
   private Integer quantity;
 }
