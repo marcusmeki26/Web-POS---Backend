@@ -19,7 +19,7 @@ public class FoodCreateRequest {
   private BigDecimal price;
   private Integer quantity;
   @NotNull (message = "category should is required")
-  private String category;
+  private Integer categoryId;
   private Boolean withVariant;
   private List<ProductVariantCreateRequest> variants;
 }
