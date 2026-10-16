@@ -24,22 +24,24 @@ import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Service.FoodService;
+import com.project.webpos.Service.Shared.ProductManagementService;
 
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-@AllArgsConstructor
+@RequiredArgsConstructor 
 @RestController
 @RequestMapping("/v1/food")
 public class FoodController {
-  private FoodService foodService;
+  private final FoodService foodService;
+  private final ProductManagementService productManagementService;
 
   @GetMapping
   public ResponseEntity<List<FoodResponse>> getFoodList(
-    @RequestParam(name = "category", required = false) String categoryType
+    @RequestParam(name = "category", required = false) Integer id
   ){
-    if(categoryType != null && !categoryType.isBlank())
-      return ResponseEntity.ok(foodService.getFoodByCategory(categoryType));
+    if(id != null)
+      return ResponseEntity.ok(productManagementService.getFoodByCategory(id));
 
     return ResponseEntity.ok(foodService.getFoodList());
   }
@@ -58,7 +60,7 @@ public class FoodController {
     @RequestPart("image") MultipartFile file
   ){
     // foodService.setFoodInit();
-    return ResponseEntity.ok().body(foodService.setFood(foodCreateRequest, file));
+    return ResponseEntity.ok().body(productManagementService.setFood(foodCreateRequest, file));
   }
 
   @PatchMapping("/{foodId}")
@@ -69,7 +71,7 @@ public class FoodController {
   ){
     // foodService.patchFoodById(patchRequest, foodId);
     // return ResponseEntity.ok().build();
-    return ResponseEntity.ok().body(foodService.patchFoodById(patchRequest, foodId));
+    return ResponseEntity.ok().body(productManagementService.patchFoodById(patchRequest, foodId));
   }
 
   @DeleteMapping("/{foodId}/{sizeId}")
