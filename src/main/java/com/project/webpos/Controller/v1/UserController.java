@@ -26,4 +26,12 @@ public class UserController {
     authService.createUser(newUser);
     return ResponseEntity.ok().build();
   }
+
+  @PostMapping("/create/dummy")
+  public ResponseEntity<Void> dummyPostUser(
+    @Valid @RequestBody UserCreateRequest postRequest
+  ){
+    authService.createUser(postRequest);
+    return ResponseEntity.ok().build();
+  }
 }
