@@ -8,6 +8,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 public class CategoryCountResponse {
-  private String categoryType;
+  private String code;
+  private Integer id;
   private Long categoryCount;
 }
