@@ -12,7 +12,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 
-import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.DTO.FoodCreateResponse;
@@ -27,14 +26,12 @@ import com.project.webpos.Entity.DTO.FoodResponse;
 )
 public interface FoodMapper {
   @Named("withVariantFoodMapping")
-  @Mapping(source = "category.code", target = "categoryType")
   @Mapping(target = "quantity", ignore = true)
   FoodResponse toResponse(Food foodList);
 
   @IterableMapping(qualifiedByName = "withVariantFoodMapping")
   List<FoodResponse> toResponseList(List<Food> foodList);
 
-  @Mapping(source = "category.code", target = "categoryType")
   @Mapping(source = "food", target = "quantity")
   @Mapping(target = "inventory", ignore = true)
   FoodResponse toResponseWithoutVariant(Food food);
@@ -53,7 +50,6 @@ public interface FoodMapper {
   FoodCreateResponse toCreateResponse(Food food);
   FoodPatchResponse toPatchResponse(Food food);
 
-  @Mapping(target = "category", source = "category", qualifiedByName = "mapCategory")
   void patchFood(FoodPatchRequest patchRequest, @MappingTarget Food food);
   // This generic fallback unwraps ALL JsonNullable fields automatically
   default <T> T unwrap(JsonNullable<T> jsonNullable) {
@@ -65,19 +61,4 @@ public interface FoodMapper {
   default <T> boolean isPresent(JsonNullable<T> jsonNullable) {
       return jsonNullable != null && jsonNullable.isPresent();
   }
-
-  @Named("mapCategory")
-  default Category category(JsonNullable<String> categoryCode){
-    if(!categoryCode.isPresent() || categoryCode == null)
-      return null;
-
-    String code = categoryCode.orElse(null);
-    if(code == null)
-      return null;
-
-    Category category = new Category();
-    category.setCode(code); 
-    return category;
-  }
-
 }
