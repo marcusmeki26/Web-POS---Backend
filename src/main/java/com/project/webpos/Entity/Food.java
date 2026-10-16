@@ -57,7 +57,7 @@ public class Food {
   private List<Inventory> inventory;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "category_code")
+  // @JoinColumn(name = "category_code")
   private Category category;
 
   @CreationTimestamp
@@ -67,4 +67,6 @@ public class Food {
   @UpdateTimestamp 
   @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
   private LocalDateTime updatedAt;
+
+  private LocalDateTime deletedAt;
 }
