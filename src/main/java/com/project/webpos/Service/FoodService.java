@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,11 +39,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor 
 @Slf4j
 public class FoodService {
   private final FoodRepository foodRepository;
-  private final CategoryService categoryService;
   private final ProductVariantService productVariantService;
   private final InventoryService inventoryService;
   private final FoodMapper foodMapper;
@@ -72,7 +72,7 @@ public class FoodService {
    * @return an object of {@code Food}
    */
   public Food getFoodById(Long id){
-    return foodRepository.findById(id)
+    return foodRepository.findByIdAndIsDeletedIsFalseAndIsActiveIsTrue(id)
       .orElseThrow(() -> new ResourceNotFoundException("INVALID_FOOD", "food does not exist"));
   }
 
@@ -81,9 +81,8 @@ public class FoodService {
    * @param categoryType The category type of {@code Category} entity
    * @return a {@code List<FoodResponse>}
    */
-  public List<FoodResponse> getFoodByCategory(String categoryType) {
-    categoryService.isCategoryExisting(categoryType);
-    List<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(categoryType);
+  public List<FoodResponse> getFoodByCategory(Integer id) {
+    List<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(id);
     List<FoodResponse> foodResponseList = new ArrayList<>();
     for(Food food : foods){
       if(food.getWithVariant()){
@@ -139,9 +138,10 @@ public class FoodService {
    * Creates a new record of {@code Food} entity
    * @param request an object of {@code FoodCreateRequest}
    * @param file an object of {@code MultipartFile} that contains the image
+   * @param category an object of {@code Category}
    */
   @Transactional
-  public FoodCreateResponse setFood(FoodCreateRequest request, MultipartFile file){
+  public FoodCreateResponse setFood(FoodCreateRequest request, MultipartFile file, Category category){
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
 
@@ -160,7 +160,7 @@ public class FoodService {
     food.setWithVariant(request.getWithVariant());
     food.setImageName(fileStorageService.saveFile(file));
 
-    Category category = categoryService.getCategory(request.getCategory());
+    // Category category = productManagementService.getCategory(request.getCategoryId());
     food.setCategory(category);
 
     Food savedFood = foodRepository.save(food);
@@ -184,14 +184,17 @@ public class FoodService {
    * @return None
    */
   @Transactional 
-  public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id){
+  public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id, Category category){
     if(patchRequestHasRecord(patchRequest)){
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
   
       Food food = getFoodById(id);
       foodMapper.patchFood(patchRequest, food);
-  
+
+      if(category != null)
+        food.setCategory(category);
+      
       if(food.getWithVariant() && !patchRequest.getVariants().isPresent())
         throw new InvalidRequestException("INVALID_REQUEST", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
   
@@ -250,12 +253,15 @@ public class FoodService {
     Food food = getFoodById(foodId);
     food.setIsDeleted(true);
     food.setIsActive(false);
+    food.setDeletedAt(LocalDateTime.now());
     foodRepository.save(food);
     log.info("Food {} is soft deleted by user {}", food.getId(), loggedUser.getId());
   }
 
-  // Utilities
-  private <T> boolean patchRequestHasRecord(FoodPatchRequest request){
+  // =======================================================
+  // UTILITIES
+  // =======================================================
+  private boolean patchRequestHasRecord(FoodPatchRequest request){
     if(request == null)
       return false;
 
@@ -266,5 +272,11 @@ public class FoodService {
             || request.getQuantity().isPresent()
             || request.getWithVariant().isPresent()
             || request.getVariants().isPresent());
+  }
+
+  public boolean hasRecordByCategory(Category category){
+    Food food = foodRepository.findFirstByCategory(category);
+
+    return food == null;
   }
 }
