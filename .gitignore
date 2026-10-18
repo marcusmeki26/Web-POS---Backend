@@ -42,4 +42,6 @@ build/
 logs
 
 ### IMAGES ###
-uploads
+uploads/
+
+resources/
