@@ -44,4 +44,4 @@ logs
 ### IMAGES ###
 uploads/
 
-resources/
+application.properties
