@@ -1,0 +1,24 @@
+spring.application.name=webpos
+
+# JPA 
+spring.datasource.url=YOUR_DATABASE_URL
+spring.datasource.username=YOUR_DATABASE_USERNAME
+spring.datasource.password=YOUR_DATABASE_PASSWORD
+
+# Server Port
+server.port=YOUR_SERVER_PORT
+
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+# Creates new tables on start and drops when the app stops
+# spring.jpa.hibernate.ddl-auto=create-drop
+
+# FILES
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=10MB
+# where you want to save the files
+app.file.upload-dir=uploads
+
+logging.level.root=INFO
+logging.level.com.project.webpos=DEBUG
+logging.file.name=logs/app.logs
