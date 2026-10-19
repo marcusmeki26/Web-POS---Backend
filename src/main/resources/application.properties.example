@@ -4,6 +4,11 @@ spring.application.name=webpos
 spring.datasource.url=YOUR_DATABASE_URL
 spring.datasource.username=YOUR_DATABASE_USERNAME
 spring.datasource.password=YOUR_DATABASE_PASSWORD
+spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.idle-timeout=600000
+spring.datasource.hikari.max-lifetime=1800000
 
 # Server Port
 server.port=YOUR_SERVER_PORT
