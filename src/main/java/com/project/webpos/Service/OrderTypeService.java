@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.OrderType;
 import com.project.webpos.Entity.DTO.OrderTypeResponse;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Mapper.OrderTypeMapper;
 import com.project.webpos.Repository.OrderTypeRepository;
 
@@ -23,6 +24,6 @@ public class OrderTypeService {
 
   public OrderType getOrderTypeById(Integer orderId){
     return orderTypeRepository.findById(orderId)
-        .orElseThrow(() -> new RuntimeException("No existing record"));
+        .orElseThrow(() -> new ResourceNotFoundException("ORDER_TYPE_NOT_EXIST", "No existing record"));
   }
 }
