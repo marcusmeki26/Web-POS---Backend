@@ -12,6 +12,7 @@ import com.project.webpos.Entity.TableList;
 import com.project.webpos.Entity.TransactionSummary;
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
+import com.project.webpos.Entity.DTO.OrderExistingPatchRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
 import com.project.webpos.Entity.DTO.OrderResponse;
 import com.project.webpos.Enum.EntryType;
@@ -187,7 +188,7 @@ public class OrderService {
    * @param receiptNo value of {@code String} the receipt no. of the table that has existing orders 
    * @param orderPatchRequests value of {@code List<OrderPatchRequest>} the order that will be added to the table
    */
-  public void addOrderToAnExistingOrder(String receiptNo, List<OrderCreateRequest> orderPatchRequests){
+  public void addOrderToAnExistingOrder(String receiptNo, List<OrderExistingPatchRequest> orderPatchRequests){
     orderPatchRequests.forEach(order -> {
       OrderList orderListSave, orderListDel;
       if(order.getSizeId() == null)
@@ -305,7 +306,7 @@ public class OrderService {
   @Transactional 
   public OrderPaymentResponse setPayment(OrderPaymentCreateRequest request){
     if(request.getReceiptNo() == null || request.getTableNo() == null)
-        throw new RuntimeException("Cannot process request without receipt no or table no");
+        throw new InvalidRequestException("UNABLE_TO_PROCESS", "PROCESSING OF PAYMENT", "Cannot process request without receipt no or table no");
     
     BigDecimal totalAmt = request.getTotalAmount();
     BigDecimal payment = request.getPayment();
@@ -314,11 +315,11 @@ public class OrderService {
     orderPaymentLine.setPrice(BigDecimal.valueOf(0.00));
     orderPaymentLine.setQuantity(1);
     orderPaymentLine.setPlaced(true);
-    orderPaymentLine.setShortFoodDesc(request.getShortFoodDesc());
+    orderPaymentLine.setShortFoodDesc(request.getTenderDescription());
     orderPaymentLine.setAmount(payment);
     orderPaymentLine.setEntryType(EntryType.PAYMENT);
     orderPaymentLine.setReceiptNo(request.getReceiptNo());
-    orderPaymentLine.setNumber(request.getNumber());
+    orderPaymentLine.setNumber(request.getTenderType());
     
     TableList tableList = tableService.getTableById(request.getTableNo());
     orderPaymentLine.setTable(tableList);
@@ -340,7 +341,7 @@ public class OrderService {
         orderChangeLine.setAmount(change.negate());
         orderChangeLine.setEntryType(EntryType.PAYMENT);
         orderChangeLine.setReceiptNo(request.getReceiptNo());
-        orderChangeLine.setNumber(request.getNumber());
+        orderChangeLine.setNumber(request.getTenderType());
         
         orderChangeLine.setTable(tableList);
 
@@ -375,16 +376,12 @@ public class OrderService {
    * @param request The object of OrderDeleteRequest class
    * @return true if the deletion is successful
    */
-  public Boolean deleteOrder(OrderDeleteRequest request){
-    if(request.getReceiptNo() != null || request.getNumber() != null){
-      OrderList orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber());
-
-      orderRepository.delete(orderList);
-
-      return true;
-    }
-
-    return false;
+  public void deleteOrder(OrderDeleteRequest request){
+    if(request.getReceiptNo() == null || request.getNumber() == null)
+      throw new InvalidRequestException("UNABLE_TO_PROCESS", "DELETION OF ORDER", "receipt no. and food id cannot be null or empty");
+     
+    OrderList orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber());
+    orderRepository.delete(orderList);
   }
 
   // Utilities
