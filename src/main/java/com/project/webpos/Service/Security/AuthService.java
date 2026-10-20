@@ -2,7 +2,6 @@ package com.project.webpos.Service.Security;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.User;
 import com.project.webpos.Entity.UserPrincipal;
+import com.project.webpos.Entity.DTO.TokenResponse;
 import com.project.webpos.Entity.DTO.UserCreateRequest;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
 import com.project.webpos.Exception.InvalidCombinationException;
@@ -59,7 +59,7 @@ public class AuthService {
    * @param creds a value of {@code UserLoginCreateRequest}
    * @return {@code Map<String,String>} that contains access token & refresh token
    */
-  public Map<String,String> login(UserTokenCreateRequest creds){
+  public TokenResponse login(UserTokenCreateRequest creds){
     Assert.notNull(creds, "request not existing");
     Assert.hasText(creds.getUsername(), " username is required");
     Assert.hasText(creds.getPassword(), " password is required");
@@ -78,7 +78,7 @@ public class AuthService {
     // return Map.of("Failed", "Wrong User");
   }
 
-  public Map<String, String> verifyRefreshToken(String refreshToken) {
+  public TokenResponse verifyRefreshToken(String refreshToken) {
     Assert.hasText(refreshToken, "missing refresh token value");
 
     String userId = jwtService.validateRefreshToken(refreshToken); // fetches the user id first to avoid null exceptions
@@ -89,6 +89,8 @@ public class AuthService {
     // Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole()));
     Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole() + ""));
     log.info("New access token is created to User {} with a refresh token of {}", user.getUserId(), refreshToken);
-    return Map.of("access_token", jwtService.createAccessToken(user.getUsername(), authorities));
+    TokenResponse tokensResponse = new TokenResponse();
+    tokensResponse.setAccessToken(jwtService.createAccessToken(user.getUsername(), authorities));
+    return tokensResponse;
   }
 }

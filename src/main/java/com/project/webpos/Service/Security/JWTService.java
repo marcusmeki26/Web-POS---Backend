@@ -17,6 +17,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.project.webpos.Entity.DTO.TokenResponse;
 import com.project.webpos.Exception.ExpiredTokenException;
 
 import io.jsonwebtoken.Claims;
@@ -44,16 +45,17 @@ public class JWTService {
         }
     }
 
-    public Map<String, String> generateToken(String username, String userId, Collection<? extends GrantedAuthority> role) {
+    public TokenResponse generateToken(String username, String userId, Collection<? extends GrantedAuthority> role) {
         // List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN"); // Create a roles. We will do a helper method to get the role from the database.
         // claims.put("roles", roles); // inserting the roles inside the claims object.
 
-        Map<String, String> jwtTokens = new HashMap<>(); // used to make access token and refresh token in JSON object.
+        // Map<String, String> jwtTokens = new HashMap<>(); // used to make access token and refresh token in JSON object.
         Map<String, Object> claims = new HashMap<>(); // used to store the JWT into JSON object
 
-        jwtTokens.put("access_token", createAccessToken(username, role));;
-        jwtTokens.put("refresh_token", createToken(claims, userId, issuedAt(), expRefreshToken(), refreshSecretKey));
-        return jwtTokens;
+        TokenResponse tokensResponse = new TokenResponse();
+        tokensResponse.setAccessToken(createAccessToken(username, role));
+        tokensResponse.setRefreshToken(createToken(claims, userId, issuedAt(), expRefreshToken(), refreshSecretKey));
+        return tokensResponse;
     }
 
     // Method for creating access token.

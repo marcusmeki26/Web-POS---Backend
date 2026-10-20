@@ -1,6 +1,5 @@
 package com.project.webpos.Controller.v1;
 
-import java.util.Map;
 
 import org.springdoc.api.ErrorMessage;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.webpos.Entity.DTO.TokenResponse;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
 import com.project.webpos.Service.Security.AuthService;
 
@@ -39,7 +39,7 @@ public class AuthController {
       content = @Content(schema = @Schema(implementation = ErrorMessage.class))
     )
   })
-  public ResponseEntity<Map<String,String>> login(
+  public ResponseEntity<TokenResponse> login(
     @Valid @RequestBody UserTokenCreateRequest creds
   ){
     return ResponseEntity.ok(authService.login(creds));
@@ -54,9 +54,9 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Access key created"),
     @ApiResponse(responseCode = "401", description = "Invalid refresh key", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public Map<String, String> getAccessToken(
+  public ResponseEntity<TokenResponse> getAccessToken(
     @Valid @RequestBody UserTokenCreateRequest userToken
   ){
-      return authService.verifyRefreshToken(userToken.getRefreshToken());
+      return ResponseEntity.ok(authService.verifyRefreshToken(userToken.getRefreshToken()));
   }
 }
