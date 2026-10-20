@@ -27,7 +27,6 @@ import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
-import com.project.webpos.Exception.ConflictException;
 import com.project.webpos.Exception.InvalidRequestException;
 import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Mapper.FoodMapper;
@@ -73,7 +72,7 @@ public class FoodService {
    */
   public Food getFoodById(Long id){
     return foodRepository.findByIdAndIsDeletedIsFalseAndIsActiveIsTrue(id)
-      .orElseThrow(() -> new ResourceNotFoundException("INVALID_FOOD", "food does not exist"));
+      .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_EXIST", "food does not exist"));
   }
 
   /**
@@ -146,10 +145,10 @@ public class FoodService {
     UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
 
     if(!request.getWithVariant() && request.getPrice() == null)
-      throw new ConflictException("UNABLE_TO_SAVE", "CREATION", "price is required");
+      throw new InvalidRequestException("UNABLE_TO_PROCESS", "CREATION", "price is required");
 
     if(!request.getWithVariant() && request.getQuantity() == null)
-      throw new ConflictException("UNABLE_TO_SAVE", "CREATION", "quantity is required");
+      throw new InvalidRequestException("UNABLE_TO_PROCESS", "CREATION", "quantity is required");
 
     Food food = new Food();
     food.setIsActive(true);
@@ -196,7 +195,7 @@ public class FoodService {
         food.setCategory(category);
       
       if(food.getWithVariant() && !patchRequest.getVariants().isPresent())
-        throw new InvalidRequestException("INVALID_REQUEST", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
+        throw new InvalidRequestException("UNABLE_TO_PROCESS", "FOOD PATCH UPDATE", "variant is required if food is marked with variant");
   
       if(food.getWithVariant()){
         List<ProductVariantPatchRequest> prodVariants = new ArrayList<>();
