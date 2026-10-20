@@ -41,7 +41,7 @@ public class CategoryService {
    */
   public void isCategoryExisting(Integer id){
     categoryRepository.findById(id)
-              .orElseThrow(() -> new ResourceNotFoundException("INVALID_CATEGORY", "category does not exist"));
+              .orElseThrow(() -> new ResourceNotFoundException("CATEGORY_NOT_EXIST", "category does not exist"));
   }
 
    /**
@@ -51,7 +51,7 @@ public class CategoryService {
    */
   public Category getCategory(Integer id){
     return categoryRepository.findByIdAndIsActiveIsTrueAndIsDeletedIsFalse(id)
-              .orElseThrow(() -> new ResourceNotFoundException("INVALID_CATEGORY", "category does not exist"));
+              .orElseThrow(() -> new ResourceNotFoundException("CATEGORY_NOT_EXIST", "category does not exist"));
   }
 
   /**
