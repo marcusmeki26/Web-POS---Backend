@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -67,7 +68,7 @@ public class CategoryController {
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
   public ResponseEntity<CategoryResponse> postCategory(
-    @RequestBody CategoryPostRequest postRequest
+    @Valid @RequestBody CategoryPostRequest postRequest
   ){
     return ResponseEntity.ok().body(categoryService.postCategory(postRequest));
   }
@@ -101,6 +102,6 @@ public class CategoryController {
     @PathVariable Integer id
   ){
     productManagementService.deleteCategory(id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }
