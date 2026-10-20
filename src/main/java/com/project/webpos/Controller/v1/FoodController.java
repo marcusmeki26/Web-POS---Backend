@@ -6,7 +6,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,7 +23,7 @@ import com.project.webpos.Entity.DTO.FoodCreateResponse;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
-import com.project.webpos.Exception.InvalidRequestException;
+import com.project.webpos.Exception.ErrorMessage;
 import com.project.webpos.Service.FoodService;
 import com.project.webpos.Service.Shared.ProductManagementService;
 
@@ -80,8 +79,8 @@ public class FoodController {
   )
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Successfully created"),
-    @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = InvalidRequestException.class))),
-    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = MethodArgumentNotValidException.class)))
+    @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
   public ResponseEntity<FoodCreateResponse> setFood(
     @Valid @RequestPart("food") FoodCreateRequest foodCreateRequest,
@@ -99,8 +98,8 @@ public class FoodController {
   )
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Successfully updated"),
-    @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = InvalidRequestException.class))),
-    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = MethodArgumentNotValidException.class)))
+    @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
   public ResponseEntity<FoodPatchResponse> patchFoodById(
     @Valid @RequestBody FoodPatchRequest patchRequest,
