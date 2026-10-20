@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorMessage> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
     log.warn("Invalid value on request: {}", ex.getMessage());
-    return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getBindingResult().getFieldError().getDefaultMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+    return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getBindingResult().getFieldError().getDefaultMessage()), HttpStatus.BAD_REQUEST);
   }
 
   // Exception thrown during login
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
   public ResponseEntity<ErrorMessage> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex){
     log.warn("Unable to perform SQL query: {}", ex.getMessage());
-    return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+    return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getMessage()), HttpStatus.CONFLICT);
   }
 
   // =======================================================
@@ -56,13 +56,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorMessage> handleResourceNotFoundException(ResourceNotFoundException ex){
     log.warn("Resource not found: {}", ex.getMessage());
-    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.NOT_FOUND);
   }
 
   @ExceptionHandler(UserNotFoundException.class)
   public ResponseEntity<ErrorMessage> handleUserNotFoundException(UserNotFoundException ex){
     log.warn("User not found: {} with a user id of {}", ex.getMessage(), ex.getUserId());
-    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.NOT_FOUND);
   }
 
   @ExceptionHandler(InvalidCombinationException.class)
@@ -80,7 +80,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ConflictException.class)
   public ResponseEntity<ErrorMessage> handleConflictException(ConflictException ex){
     log.warn("Conflicting values: {} during {}", ex.getMessage(), ex.getProcessOf());
-    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.CONFLICT);
   }
 
   @ExceptionHandler(InvalidRequestException.class)
