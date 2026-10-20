@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.TableList;
 import com.project.webpos.Entity.DTO.TableListResponse;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Mapper.TableListMapper;
 import com.project.webpos.Repository.TableListRepository;
 
@@ -19,7 +20,7 @@ public class TableListService {
 
   public TableList getTableById(Integer id){
     return tableRepository.findById(id)
-      .orElseThrow(() -> new RuntimeException("No existing table id"));
+      .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_EXIST","No existing table id"));
   }
 
   public List<TableListResponse> getTables(){
