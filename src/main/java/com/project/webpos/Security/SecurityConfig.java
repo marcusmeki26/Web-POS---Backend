@@ -51,7 +51,7 @@ public class SecurityConfig {
     return http
       .csrf(AbstractHttpConfigurer::disable) // disables the csrf
       .authorizeHttpRequests(request -> request
-              .requestMatchers("/login", "/refresh", "/v1/user/create/dummy", "/swagger-ui/index.html", "/v3/api-docs") // This removes the need for the user to be authenticated first before logging in. Basically you can perform a POST method without the need of being authenticated.
+              .requestMatchers("/login", "/refresh", "/v1/user/create/dummy", "/swagger-ui/**", "/v3/api-docs/**") // This removes the need for the user to be authenticated first before logging in. Basically you can perform a POST method without the need of being authenticated.
               .permitAll()
               .anyRequest().authenticated()) // tells the spring that every http request should be authenticated
       .httpBasic(Customizer.withDefaults()) // this lets you test endpoints quickly from tools like postman.
