@@ -10,6 +10,7 @@ import com.project.webpos.Entity.ProductVariant;
 import com.project.webpos.Entity.Size;
 import com.project.webpos.Entity.DTO.ProductVariantCreateRequest;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
+import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.Repository.ProductVariantRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,7 @@ public class ProductVariantService {
    */
   public ProductVariant getProductVariantById(Integer id){
     return productVariantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("No exisitng variant found."));
+            .orElseThrow(() -> new ResourceNotFoundException("PRODUCT_VARIANT_NOT_EXIST", "No exisitng variant found."));
   }
 
   /**
@@ -64,7 +65,8 @@ public class ProductVariantService {
    * @returns an object of {@code ProductVariant}
    */
   public ProductVariant getProductVariantByFoodAndSize(Long foodId, Integer sizeId){
-    return productVariantRepository.findByFoodIdAndSizeId(foodId, sizeId);
+    return productVariantRepository.findByFoodIdAndSizeId(foodId, sizeId)
+              .orElseThrow(() -> new ResourceNotFoundException("PRODUCT_VARIANT_NOT_EXIST", "No existing food id and size id"));
   }
 
   /**
