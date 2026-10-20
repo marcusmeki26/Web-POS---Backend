@@ -13,6 +13,12 @@ spring.datasource.hikari.max-lifetime=1800000
 # Server Port
 server.port=YOUR_SERVER_PORT
 
+# Swagger Documentation
+# Change the raw JSON API path
+# springdoc.api-docs.path=YOUR_API_PATH
+# Change the Swagger UI path
+# springdoc.swagger-ui.path=YOUR_UI_PATH
+
 spring.jpa.show-sql=true
 spring.jpa.hibernate.ddl-auto=update
 # Creates new tables on start and drops when the app stops
@@ -24,6 +30,7 @@ spring.servlet.multipart.max-request-size=10MB
 # where you want to save the files
 app.file.upload-dir=uploads
 
+# Log
 logging.level.root=INFO
 logging.level.com.project.webpos=DEBUG
 logging.file.name=logs/app.logs
