@@ -3,12 +3,9 @@ package com.project.webpos.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Category;
-import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.CategoryCountResponse;
 import com.project.webpos.Entity.DTO.CategoryPatchRequest;
 import com.project.webpos.Entity.DTO.CategoryPostRequest;
@@ -68,9 +65,6 @@ public class CategoryService {
    * @return
    */
   public CategoryResponse postCategory(CategoryPostRequest postRequest){
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-
     Category category = new Category();
 
     category.setCode(postRequest.getCode());
@@ -78,7 +72,7 @@ public class CategoryService {
     category.setIsDeleted(false);
 
     CategoryResponse categoryResponse = categoryMapper.toResponse(categoryRepository.save(category));
-    log.info("A category has been added {} by User {}", categoryResponse.getId() ,loggedUser.getId());
+    log.info("A category has been added {}", categoryResponse.getId());
     return categoryResponse;
   }
 
@@ -89,12 +83,9 @@ public class CategoryService {
    * @return an object of {@code CategoryResponse}
    */
   public CategoryResponse patchCategory(Integer id, CategoryPatchRequest patchRequest){
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-
     Category category = getCategory(id);
     categoryMapper.patchCategory(patchRequest, category);
-    log.info("A category {} has been updated by User {}", id, loggedUser.getId());
+    log.info("A category {} has been updated", id);
     return categoryMapper.toResponse(categoryRepository.save(category));
   }
 
@@ -107,5 +98,6 @@ public class CategoryService {
     category.setIsDeleted(true);
     category.setDeletedAt(LocalDateTime.now());
     categoryRepository.save(category);
+    log.info("A category has been soft deleted", category.getId());
   }
 }
