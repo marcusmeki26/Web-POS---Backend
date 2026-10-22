@@ -45,3 +45,5 @@ logs
 uploads/
 
 application.properties
+*.notes
+notes/
