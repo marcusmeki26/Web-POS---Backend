@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor 
 public class SecurityConfig {
   private final UserDetailService userDetailService;
-  private final JWTFilter jwtFilter;
+  private final JWTCheckerPerRequest jwtCheckerPerRequest;
 
   // =================================================================================================================
   // Overriding the default filter chain. Creating a custom configuration for filter chain.
@@ -56,7 +56,7 @@ public class SecurityConfig {
               .anyRequest().authenticated()) // tells the spring that every http request should be authenticated
       .httpBasic(Customizer.withDefaults()) // this lets you test endpoints quickly from tools like postman.
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // this makes every http request stateless, meaning every request should contain a token.
-      .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // before using the UsernamePasswordAuthenticationFilter go to JWTFilter first
+      .addFilterBefore(jwtCheckerPerRequest, UsernamePasswordAuthenticationFilter.class) // before using the UsernamePasswordAuthenticationFilter go to jwtCheckerPerRequest first
       .cors(cors -> cors.configurationSource(corsConfigurationSource())) // include the cors configuration
       .build();
   }
