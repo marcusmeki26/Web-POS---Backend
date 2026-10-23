@@ -3,6 +3,7 @@ package com.project.webpos.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Category;
@@ -11,8 +12,10 @@ import com.project.webpos.Entity.DTO.CategoryPatchRequest;
 import com.project.webpos.Entity.DTO.CategoryPostRequest;
 import com.project.webpos.Entity.DTO.CategoryResponse;
 import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Mapper.CategoryMapper;
 import com.project.webpos.Repository.CategoryRepository;
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +75,19 @@ public class CategoryService {
     category.setIsDeleted(false);
 
     CategoryResponse categoryResponse = categoryMapper.toResponse(categoryRepository.save(category));
-    log.info("A category has been added {}", categoryResponse.getId());
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("add category")
+        .resourceId(categoryResponse.getId().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Added category successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
     return categoryResponse;
   }
 
@@ -85,7 +100,19 @@ public class CategoryService {
   public CategoryResponse patchCategory(Integer id, CategoryPatchRequest patchRequest){
     Category category = getCategory(id);
     categoryMapper.patchCategory(patchRequest, category);
-    log.info("A category {} has been updated", id);
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+      .level("INFO")
+      .action("update category")
+      .resourceId(id.toString())
+      .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+      .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+      .build();
+
+    log.atInfo()
+        .setMessage("Category updated successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
     return categoryMapper.toResponse(categoryRepository.save(category));
   }
 
@@ -98,6 +125,18 @@ public class CategoryService {
     category.setIsDeleted(true);
     category.setDeletedAt(LocalDateTime.now());
     categoryRepository.save(category);
-    log.info("A category has been soft deleted", category.getId());
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("soft deleted category")
+        .resourceId(category.getId().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Successfully soft deleted category")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 }
