@@ -2,9 +2,10 @@ package com.project.webpos.Controller.v1;
 
 
 import org.springdoc.api.ErrorMessage;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.DTO.TokenResponse;
@@ -27,6 +28,7 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping("/login")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Handles User login", 
     description = "Performs validation of credentials. Returns the access key & refresh key if the credentials are valid"
@@ -39,13 +41,14 @@ public class AuthController {
       content = @Content(schema = @Schema(implementation = ErrorMessage.class))
     )
   })
-  public ResponseEntity<TokenResponse> login(
+  public TokenResponse login(
     @Valid @RequestBody UserTokenCreateRequest creds
   ){
-    return ResponseEntity.ok(authService.login(creds));
+    return authService.login(creds);
   }
 
   @PostMapping("/refresh")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Genates new access key",
     description = "Peforms refresh key validation. Returns a new access key if the refresh key is valid"
@@ -54,9 +57,9 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Access key created"),
     @ApiResponse(responseCode = "401", description = "Invalid refresh key", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<TokenResponse> getAccessToken(
+  public TokenResponse getAccessToken(
     @Valid @RequestBody UserTokenCreateRequest userToken
   ){
-      return ResponseEntity.ok(authService.verifyRefreshToken(userToken.getRefreshToken()));
+      return authService.verifyRefreshToken(userToken.getRefreshToken());
   }
 }
