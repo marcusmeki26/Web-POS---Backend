@@ -3,6 +3,7 @@ package com.project.webpos.Service.Security;
 import java.util.Collection;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,7 +20,10 @@ import com.project.webpos.Entity.DTO.UserCreateRequest;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
 import com.project.webpos.Exception.InvalidCombinationException;
 import com.project.webpos.Exception.UserNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Repository.UserRepository;
+
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import io.jsonwebtoken.lang.Assert;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +55,20 @@ public class AuthService {
     user.setUserRole(newUser.getUserRole());
     user.setUsername(newUser.getUsername());
     user.setPassword(encoder.encode(newUser.getPassword()));
-    userRepository.save(user);
+    User savedUser = userRepository.save(user);
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("log in user")
+        .resourceId(savedUser.getUserId())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+      .setMessage("User added successfully")
+      .addKeyValue("action_info", loggerFormat)
+      .log();
   }
 
   /**
@@ -70,12 +87,23 @@ public class AuthService {
 
     if(authentication.isAuthenticated()){ // if the user exist and valid
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        log.info("User {} logged in", userPrincipal.getUserId());
+        
+        LoggerFormat loggerFormat = LoggerFormat.builder()
+          .level("INFO")
+          .action("log in user")
+          .resourceId(userPrincipal.getUserId())
+          .actorId(userPrincipal.getUserId())
+          .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+          .build();
+        
+        log.atInfo()
+          .setMessage("User logged in")
+          .addKeyValue("action_info", loggerFormat)
+          .log();
         return jwtService.generateToken(userPrincipal.getUsername(), userPrincipal.getUserId(), userPrincipal.getAuthorities()); // calling the method to generate the token.
     }
 
     throw new InvalidCombinationException("INVALID_USERNAME_AND_PASSWORD", "Username or password is incorrect");
-    // return Map.of("Failed", "Wrong User");
   }
 
   public TokenResponse verifyRefreshToken(String refreshToken) {
@@ -88,7 +116,19 @@ public class AuthService {
 
     // Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole()));
     Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getUserRole() + ""));
-    log.info("New access token is created to User {} with a refresh token of {}", user.getUserId(), refreshToken);
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("access token generation")
+        .resourceId(refreshToken)
+        .actorId(user.getUserId())
+        .endpoint(JWTCheckerPerRequest.ENDPOINT)
+        .build();
+
+    log.atInfo()
+      .setMessage("Generated new access token")
+      .addKeyValue("action_info", loggerFormat)
+      .log();
     TokenResponse tokensResponse = new TokenResponse();
     tokensResponse.setAccessToken(jwtService.createAccessToken(user.getUsername(), authorities));
     return tokensResponse;
