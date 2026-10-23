@@ -16,6 +16,7 @@ import com.project.webpos.Service.Security.JWTService;
 import com.project.webpos.Service.Security.UserDetailService;
 
 import com.project.webpos.Entity.UserPrincipal;
+import com.project.webpos.Logging.LoggerFormat;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 // =================================================================================================================
 public class JWTCheckerPerRequest extends OncePerRequestFilter{
   public static final String USER_ID = "userId"; 
+  public static final String ENDPOINT = "endpoint"; 
 
   private final JWTService jwtService;
   private final ApplicationContext applicationContext;
@@ -64,9 +66,23 @@ public class JWTCheckerPerRequest extends OncePerRequestFilter{
                 UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
 
                 MDC.put(USER_ID, loggedUser.getUserId().toString());
-                log.info("User {} accessed {} with a method of {}", loggedUser.getUserId().toString(), request.getRequestURI(), request.getMethod());
+                
+                if(!request.getMethod().toLowerCase().equals("get")){
+                    LoggerFormat loggerFormat = LoggerFormat.builder()
+                        .level("INFO")
+                        .action("user access endpoint request")
+                        .actorId(MDC.get(USER_ID))
+                        .endpoint(request.getRequestURI())
+                        .build();
+    
+                    log.atInfo()
+                        .setMessage("Accessing endpoint")
+                        .addKeyValue("action_info", loggerFormat)
+                        .log();
+                }
             }
         }
+        MDC.put(ENDPOINT, request.getRequestURI());
         filterChain.doFilter(request, response); // this passed the request and response to the next filter chain.
   
         MDC.clear(); // clears the MDC to avoid memory leaks
