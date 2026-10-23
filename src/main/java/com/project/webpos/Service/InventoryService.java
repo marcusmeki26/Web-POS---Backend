@@ -1,17 +1,23 @@
 package com.project.webpos.Service;
 
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
+import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Repository.InventoryRepository;
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryService {
   private final InventoryRepository inventoryRepository;
 
@@ -74,7 +80,8 @@ public class InventoryService {
   }
 
   public Inventory getInventoryByFoodIdAndProductVariantId(Long foodId, Integer prodVarId){
-    return inventoryRepository.findByFoodIdAndProductVariantId(foodId, prodVarId);
+    return inventoryRepository.findByFoodIdAndProductVariantId(foodId, prodVarId)
+        .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_EXIST", "the inventory does not exist"));
   }
 
   /**
@@ -132,10 +139,20 @@ public class InventoryService {
    */
   public void deleteByFoodIdAndProductVariantId(Long foodId, Integer prodVarId){
     Inventory inventory = getInventoryByFoodIdAndProductVariantId(foodId, prodVarId);
-    if(inventory == null)
-      throw new RuntimeException("No existing inventory");
-
     deleteInventory(inventory);
+    
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("deleted inventory")
+        .resourceId(inventory.getId().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Inventory deleted successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   /**
