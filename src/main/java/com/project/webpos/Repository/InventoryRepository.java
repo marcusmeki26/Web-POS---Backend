@@ -1,5 +1,7 @@
 package com.project.webpos.Repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,5 +14,5 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
   Inventory findByFoodAndProductVariant(Food food, ProductVariant productVariant);
   Inventory findByFood(Food food);
   Inventory findByFoodIdAndProductVariantIdIsNull(Long foodId);
-  Inventory findByFoodIdAndProductVariantId(Long foodId, Integer prodVarId);
+  Optional<Inventory> findByFoodIdAndProductVariantId(Long foodId, Integer prodVarId);
 }
