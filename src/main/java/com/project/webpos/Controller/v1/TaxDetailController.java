@@ -1,6 +1,5 @@
 package com.project.webpos.Controller.v1;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,8 +17,8 @@ public class TaxDetailController {
   private final TaxDetailService taxDetailService;
 
   @GetMapping("/{isActive}")
-  public ResponseEntity<TaxDetailResponse> getActiveTax(@PathVariable Boolean isActive){
+  public TaxDetailResponse getActiveTax(@PathVariable Boolean isActive){
 
-    return ResponseEntity.ok(taxDetailService.getActiveTax(isActive));
+    return taxDetailService.getActiveTax(isActive);
   }
 }
