@@ -12,4 +12,5 @@ public class OrderDeleteRequest {
   private String receiptNo;
   @NotNull(message = "food id should not be empty")
   private Long number;
+  private Integer sizeId;
 }

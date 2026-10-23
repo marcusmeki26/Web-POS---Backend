@@ -1,6 +1,7 @@
 package com.project.webpos.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,9 +15,10 @@ import com.project.webpos.Enum.EntryType;
 public interface OrderRepository extends JpaRepository<OrderList, Integer>{
   List<OrderList> findByNumber(Long number);
   List<OrderList> findByTable_Id(Integer tableId);
-  List<OrderList> findByReceiptNo(String receiptNo);
+  Optional<List<OrderList>> findByReceiptNo(String receiptNo);
   List<OrderList> findByTable_IdAndEntryType(Integer tableId, EntryType entryType);
-  OrderList findByReceiptNoAndNumber(String receiptNo, Long number);
+  Optional<OrderList> findByReceiptNoAndNumber(String receiptNo, Long number);
+  Optional<OrderList> findByReceiptNoAndNumberAndSizeId(String receiptNo, Long number, Integer sizeId);
   OrderList findByNumberAndTableId(Long number, Integer tableId);
   OrderList findByNumberAndTableIdAndSizeId(Long number, Integer tableId, Integer sizeId);
   

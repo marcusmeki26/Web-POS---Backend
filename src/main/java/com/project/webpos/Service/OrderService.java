@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.OrderList;
@@ -14,21 +15,27 @@ import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderExistingPatchRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
+import com.project.webpos.Entity.DTO.OrderPatchRequestAssignTableAndOrderType;
 import com.project.webpos.Entity.DTO.OrderResponse;
+import com.project.webpos.Entity.DTO.RetrieveOrderPatchRequest;
 import com.project.webpos.Enum.EntryType;
 import com.project.webpos.Exception.InvalidRequestException;
 import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
 import com.project.webpos.Entity.DTO.OrderPaymentResponse;
 import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
 import com.project.webpos.Repository.TransactionSummaryRepository;
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
   // Remove all Boolean return values in Insertion Statement. Create exception handler for failed insertion :REMOVE-COMMENT
   // Change hard coded values like 1.12 & .12 into setup based :REMOVE-COMMENT
@@ -152,35 +159,34 @@ public class OrderService {
   }
 
   /**
-   * Assigns a table based on receipt no.
+   * Assigns a table & order type based on receipt no.
    * @param receiptNo the receipt no of the order
    * @param patchRequest an object of {@code OrderPatchRequest}
    */
-  public void patchOrderByReceiptNo(String receiptNo, OrderPatchRequest patchRequest){
-    if(orderPatchRequestHasRecord(patchRequest)){
-      List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
-  
-      if(orderList != null){
-        if(patchRequest.getTableNo() == null || patchRequest.getPlaced() == null)
-          throw new InvalidRequestException("INVALID_VALUE", "assigning a table to a set of orders", "table no or placed status is required");
-  
-        orderList.forEach(order -> {
-          if(patchRequest.getTableNo() != null){
-            TableList tableList = tableService.getTableById(patchRequest.getTableNo().get());
-            order.setTable(tableList);
-          }
-          
-          order.setPlaced(patchRequest.getPlaced().get());
-  
-          if(patchRequest.getOrderType() != null){
-            OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType().get());
-            order.setOrderType(orderType);
-          }
-  
-          orderRepository.save(order);
-        });
-      }
-    }
+  public void patchOrderByReceiptNo(String receiptNo, OrderPatchRequestAssignTableAndOrderType patchRequest){
+    List<OrderList> orderList = findByReceiptNo(receiptNo);
+    TableList tableList = tableService.getTableById(patchRequest.getTableNo());
+    OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType());
+
+    orderList.forEach(order -> {
+      order.setTable(tableList);
+      order.setPlaced(patchRequest.getPlaced());
+      order.setOrderType(orderType);
+      orderRepository.save(order);
+    });
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("moved an order to a table " + tableList.getTableName() + " with an order type of " + orderType.getOrderDesc())
+        .resourceId(receiptNo)
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Successfully moved an order to a table & added an order type")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   /**
@@ -231,32 +237,34 @@ public class OrderService {
    * @param patchRequest an object of {@code OrderPatchRequest}
    * @return
    */
-  public void patchRetrieveOrder(String receiptNo, OrderPatchRequest patchRequest){
-    if(orderPatchRequestHasRecord(patchRequest)){
-      List<OrderList> orderList = orderRepository.findByReceiptNo(receiptNo);
-      
-      if(orderList != null){
-        orderList.forEach(order -> {
-          if(patchRequest.getTableNo().get() != null){
-            TableList tableList = tableService.getTableById(patchRequest.getTableNo().get());
-            order.setTable(tableList);
-          }else{
-            order.setTable(null);
-          }
-          
-          order.setPlaced(patchRequest.getPlaced().get());
-  
-          if(patchRequest.getOrderType().get() != null){
-            OrderType orderType = orderTypeService.getOrderTypeById(patchRequest.getOrderType().get());
-            order.setOrderType(orderType);
-          }else{
-            order.setOrderType(null);
-          }
-  
-          orderRepository.save(order);
-        });
-      }
-    }
+  public void patchRetrieveOrder(String receiptNo, RetrieveOrderPatchRequest patchRequest){
+    if(patchRequest.getTableNo() != null)
+      throw new InvalidRequestException("INVALID_REQUEST", "during retrieving of order from a table", "cannot retrieve order if table no is not null");
+    
+    if(patchRequest.getOrderType() != null)
+      throw new InvalidRequestException("INVALID_REQUEST", "during retrieving of order from a table", "cannot retrieve order if order type is not null");
+    
+    List<OrderList> orderList = findByReceiptNo(receiptNo);
+    
+    orderList.forEach(order -> {
+      order.setTable(null);
+      order.setPlaced(patchRequest.getPlaced());
+      order.setOrderType(null);
+      orderRepository.save(order);
+    });
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("retrieving of order from a table")
+        .resourceId(receiptNo)
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Successfully retrieved order")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   /**
@@ -327,7 +335,8 @@ public class OrderService {
     orderRepository.save(orderPaymentLine);
     
     if(payment.compareTo(totalAmt) == -1){
-      return new OrderPaymentResponse(false, null);
+      List<OrderList> orders = orderRepository.findByTable_Id(request.getTableNo());
+      return new OrderPaymentResponse(false, orderMapper.toResponseList(orders));
     }
     else{
       // Insert change line
@@ -365,6 +374,19 @@ public class OrderService {
         transactionSummaryService.setTransactionSummary(orders);
 
       orderRepository.deleteAll(orders);
+
+      LoggerFormat loggerFormat = LoggerFormat.builder()
+          .level("INFO")
+          .action("completed order payment")
+          .resourceId(request.getReceiptNo())
+          .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+          .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+          .build();
+
+      log.atInfo()
+          .setMessage("Complete order payment successful")
+          .addKeyValue("action_info", loggerFormat)
+          .log();
       
       return new OrderPaymentResponse(true, orderMapper.toResponseList(orders));
     }
@@ -379,9 +401,29 @@ public class OrderService {
   public void deleteOrder(OrderDeleteRequest request){
     if(request.getReceiptNo() == null || request.getNumber() == null)
       throw new InvalidRequestException("UNABLE_TO_PROCESS", "DELETION OF ORDER", "receipt no. and food id cannot be null or empty");
-     
-    OrderList orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber());
+    
+    OrderList orderList = null;
+    
+    if(request.getSizeId() != null)
+      orderList = orderRepository.findByReceiptNoAndNumberAndSizeId(request.getReceiptNo(), request.getNumber(), request.getSizeId())
+          .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_EXIST", "no order found. cannot perform deletion"));
+    else
+      orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber())
+          .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_EXIST", "no order found. cannot perform deletion"));
     orderRepository.delete(orderList);
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("deleted food " + orderList.getNumber() + " from receipt no.: " + orderList.getReceiptNo())
+        .resourceId(orderList.getNumber().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Food deleted successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   // Utilities
@@ -393,6 +435,11 @@ public class OrderService {
     }
 
     return "";
+  }
+
+  private List<OrderList> findByReceiptNo(String receiptNo){
+    return orderRepository.findByReceiptNo(receiptNo)
+        .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_EXIST", "order does not exist. cannot add to a table"));
   }
 
   private boolean orderPatchRequestHasRecord(OrderPatchRequest request){

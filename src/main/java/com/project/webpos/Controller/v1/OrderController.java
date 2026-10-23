@@ -3,7 +3,7 @@ package com.project.webpos.Controller.v1;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.OrderList;
@@ -19,7 +20,9 @@ import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderExistingPatchRequest;
 import com.project.webpos.Entity.DTO.OrderPatchRequest;
+import com.project.webpos.Entity.DTO.OrderPatchRequestAssignTableAndOrderType;
 import com.project.webpos.Entity.DTO.OrderResponse;
+import com.project.webpos.Entity.DTO.RetrieveOrderPatchRequest;
 import com.project.webpos.Exception.ErrorMessage;
 import com.project.webpos.Entity.DTO.OrderPaymentCreateRequest;
 import com.project.webpos.Entity.DTO.OrderPaymentResponse;
@@ -43,65 +46,71 @@ public class OrderController {
   private final OrderService orderService;
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves all order or retrieves based on table ID",
     description = "Fetches all order or fetches all order based on table ID if it is not null"
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved order/s")
-  public ResponseEntity<List<OrderResponse>> getOrders(
+  public List<OrderResponse> getOrders(
     @Parameter(description = "ID of the table to search", required = false, example = "1")
     @RequestParam(name = "table", required = false) Integer tableId
   ){
     if(tableId != null)
-      return ResponseEntity.ok(orderService.getOrderByTableId(tableId));
+      return orderService.getOrderByTableId(tableId);
     
-    return ResponseEntity.ok(orderService.getOrders());
+    return orderService.getOrders();
   }
 
   @GetMapping("/{foodId}")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves order based on its food ID",
     description = "Fetches order based on the specified food ID and unplaced"
   ) 
   @ApiResponse(responseCode = "200", description = "Successfully retrieved order/s")
-  public ResponseEntity<List<OrderResponse>> getOrderByFoodId(
+  public List<OrderResponse> getOrderByFoodId(
     @Parameter(description = "ID of the food to search", required = true, example = "10000")
     @PathVariable Long foodId
   ){
-    return ResponseEntity.ok(orderService.getOrderByFoodId(foodId));
+    return orderService.getOrderByFoodId(foodId);
   }
 
   @GetMapping("/sum")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets the sum of the order",
     description = "Retrieves the sum of unplaced orders"
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved the sum of unplaced orders")
-  public ResponseEntity<BigDecimal> getOrderSumUnplaced(){
-    return ResponseEntity.ok(orderService.getOrderSumUnplaced());
+  public BigDecimal getOrderSumUnplaced(){
+    return orderService.getOrderSumUnplaced();
   }
 
   @GetMapping("/current/receipt")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Generates the current receipt no.",
     description = "Generates the current receipt no. If the table is empty start with R000001"
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved current receipt no.")
-  public ResponseEntity<String> getCurrentReceiptNo(){
-    return ResponseEntity.ok(orderService.getCurrentReceiptNo());
+  public String getCurrentReceiptNo(){
+    return orderService.getCurrentReceiptNo();
   }
 
   @GetMapping("/unplaced")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves all unplaced orders",
     description = "Fetches all unplaced orders"
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved orders")
-  public ResponseEntity<List<OrderResponse>> getUnplacedOrders(){
-    return ResponseEntity.ok(orderService.getUnplacedOrders());
+  public List<OrderResponse> getUnplacedOrders(){
+    return orderService.getUnplacedOrders();
   }
 
   @PatchMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Partially modify an order based on order ID",
     description = "Updates the quantity of an order"
@@ -110,15 +119,16 @@ public class OrderController {
     @ApiResponse(responseCode = "200", description = "Successfully updated"),
     @ApiResponse(responseCode = "404", description = "Order not found")
   })
-  public ResponseEntity<OrderList> patchOrder(
+  public OrderList patchOrder(
     @Parameter(description = "Target ID of order to be updated", required = true)
     @PathVariable Integer id, 
     @RequestBody OrderPatchRequest orderPatchRequest
   ){
-    return ResponseEntity.ok().body(orderService.patchOrder(id, orderPatchRequest));
+    return orderService.patchOrder(id, orderPatchRequest);
   }
 
   @PatchMapping("/receipt/{receiptNo}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Partially modify an order based on receipt no.",
     description = "Assigning of table and order type"
@@ -128,16 +138,16 @@ public class OrderController {
     @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
     @ApiResponse(responseCode = "404", description = "No existing record", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> patchOrderByReceiptNo(
+  public void patchOrderByReceiptNo(
     @Parameter(description = "Target receipt no. of order to be updated", required = true)
     @PathVariable String receiptNo, 
-    @RequestBody OrderPatchRequest orderPatchRequest
+    @Valid @RequestBody OrderPatchRequestAssignTableAndOrderType patchRequest
   ){
-    orderService.patchOrderByReceiptNo(receiptNo, orderPatchRequest);
-    return ResponseEntity.noContent().build();
+    orderService.patchOrderByReceiptNo(receiptNo, patchRequest);
   }
 
   @PatchMapping("/receipt/existing/{receiptNo}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Partially modify an order based on receipt no.",
     description = "Moved an unplaced order into a table that has existing order. If the same food is exsiting add the quantity. Else modify the table ID"
@@ -146,51 +156,51 @@ public class OrderController {
     @ApiResponse(responseCode = "204", description = "Successfully added"),
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> patchOrdersByReceiptNo(
+  public void patchOrdersByReceiptNo(
     @Parameter(description = "Target receipt no. of order to be updated", required = true)
     @PathVariable String receiptNo, 
     @Valid @RequestBody List<OrderExistingPatchRequest> orderPatchRequest
   ){
     orderService.addOrderToAnExistingOrder(receiptNo, orderPatchRequest);
-    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/retrieve/{receiptNo}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
-    summary = "Partially modify ab order based on receipt no.",
-    description = "Modifies 'placed' field into false. Used during retrieving of order from table to POSs"
+    summary = "Partially modify an order based on receipt no.",
+    description = "Modifies 'placed' field into false. Used during retrieving of order from table to POS"
   )
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Successfully updated"),
+    @ApiResponse(responseCode = "204", description = "Successfully retrieved"),
     @ApiResponse(responseCode = "404", description = "No existing record", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> patchRetrieveOrderByReceiptNo(
-    @Parameter(description = "Target receipt no. of order to be updated", required = true)
+  public void patchRetrieveOrderByReceiptNo(
+    @Parameter(description = "Target receipt no. of order to be retrieved", required = true)
     @PathVariable String receiptNo, 
-    @RequestBody OrderPatchRequest orderPatchRequest
+    @Valid @RequestBody RetrieveOrderPatchRequest patchRequest
   ){
-    orderService.patchRetrieveOrder(receiptNo, orderPatchRequest);
-    return ResponseEntity.noContent().build();
+    orderService.patchRetrieveOrder(receiptNo, patchRequest);
   }
 
   @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a new order",
     description = "Adds new order"
   )
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Successfully created"),
+    @ApiResponse(responseCode = "201", description = "Successfully created"),
     @ApiResponse(responseCode = "404", description = "No existing record", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> setOrder(
+  public void setOrder(
     @Valid @RequestBody OrderCreateRequest request
   ){
     orderService.setOrder(request);
-    return ResponseEntity.ok().build();
   }
 
   @PostMapping("/payment")
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Handles processing of payment",
     description = "Performs processing of payment. If payment is not enough, subtract it with the balance. Else move the order into transaction summary, payment, and line"
@@ -201,18 +211,19 @@ public class OrderController {
     @ApiResponse(responseCode = "404", description = "No existing record", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<OrderPaymentResponse> setPayment(
+  public OrderPaymentResponse setPayment(
     @Valid @RequestBody OrderPaymentCreateRequest request
   ){
       OrderPaymentResponse orderPaymentResponse = orderService.setPayment(request);
       if(orderPaymentResponse.getProcessTransaction()){
-        return ResponseEntity.ok(orderPaymentResponse); 
+        return orderPaymentResponse; 
       }else{
-        return ResponseEntity.ok(orderPaymentResponse); 
+        return orderPaymentResponse; 
       }
   }
 
   @DeleteMapping
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes an order",
     description = "Hard deletes an order based on the food id & receipt no."
@@ -222,10 +233,9 @@ public class OrderController {
     @ApiResponse(responseCode = "422", description = "Unable to process: failed during business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> deleteOrder(
+  public void deleteOrder(
     @Valid @RequestBody OrderDeleteRequest request
   ){
-    orderService.deleteOrder(request); 
-    return ResponseEntity.ok().build();
+    orderService.deleteOrder(request);
   }
 }
