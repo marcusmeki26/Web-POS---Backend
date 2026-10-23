@@ -2,9 +2,10 @@ package com.project.webpos.Controller.v1;
 
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.DTO.OrderTypeResponse;
@@ -23,12 +24,13 @@ public class OrderTypeController {
   private final OrderTypeService orderTypeService;
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves all order type",
     description = "Fetches all order type"
   )
   @ApiResponse(responseCode = "200", description = "Sucessfully retrieved")
-  public ResponseEntity<List<OrderTypeResponse>> getOrderTypes(){
-    return ResponseEntity.ok(orderTypeService.getOrderTypes());
+  public List<OrderTypeResponse> getOrderTypes(){
+    return orderTypeService.getOrderTypes();
   }
 }
