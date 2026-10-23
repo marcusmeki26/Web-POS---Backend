@@ -3,6 +3,7 @@ package com.project.webpos.Controller.v1;
 import java.util.List;
 
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -46,16 +48,20 @@ public class FoodController {
   private final ProductManagementService productManagementService;
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   @Operation(summary = "Retrieves all food or retrieves food based on its category ID", description = "Fetches all active & undeleted food")
-  @ApiResponse(responseCode = "200", description = "Successfully retrieved food/s")
-  public ResponseEntity<List<FoodResponse>> getFoodList(
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved food/s"),
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
+  })
+  public List<FoodResponse> getFoodList(
     @Parameter(description = "Filter food by is category ID", required = false, example = "1")
     @RequestParam(name = "category", required = false) Integer id
   ){
     if(id != null)
-      return ResponseEntity.ok(productManagementService.getFoodByCategory(id));
+      return productManagementService.getFoodByCategory(id);
 
-    return ResponseEntity.ok(foodService.getFoodList());
+    return foodService.getFoodList();
   }
 
   @GetMapping("/image/{foodId}")
@@ -72,25 +78,28 @@ public class FoodController {
   }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasRole('OWNER')")
   @Operation(
     summary = "Create a new food", 
     description = "Adds the new food on the menu. Returns the food name & short description"
   )
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Successfully created"),
+    @ApiResponse(responseCode = "201", description = "Successfully created"),
     @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
-    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
+    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<FoodCreateResponse> setFood(
+  public FoodCreateResponse setFood(
     @Valid @RequestPart("food") FoodCreateRequest foodCreateRequest,
     @RequestPart("image") MultipartFile file
   ){
     // foodService.setFoodInit();
-    return ResponseEntity.ok().body(productManagementService.setFood(foodCreateRequest, file));
+    return productManagementService.setFood(foodCreateRequest, file);
   }
 
   @PatchMapping("/{foodId}")
+  @ResponseStatus(HttpStatus.OK)
   @PreAuthorize("hasRole('OWNER')")
   @Operation(
     summary = "Partially modify a product", 
@@ -99,19 +108,21 @@ public class FoodController {
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Successfully updated"),
     @ApiResponse(responseCode = "422", description = "Unable to process: failed on business logic", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
-    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
+    @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<FoodPatchResponse> patchFoodById(
+  public FoodPatchResponse patchFoodById(
     @Valid @RequestBody FoodPatchRequest patchRequest,
     @Parameter(description = "The ID of the target food to modify", required = true, example = "10000")
     @PathVariable Long foodId
   ){
     // foodService.patchFoodById(patchRequest, foodId);
     // return ResponseEntity.ok().build();
-    return ResponseEntity.ok().body(productManagementService.patchFoodById(patchRequest, foodId));
+    return productManagementService.patchFoodById(patchRequest, foodId);
   }
 
   @DeleteMapping("/{foodId}/{sizeId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @PreAuthorize("hasRole('OWNER')")
   @Operation(
     summary = "Deletes a food with variant",
@@ -119,19 +130,19 @@ public class FoodController {
   )
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "Food deleted successfully. No content returned"),
-    @ApiResponse(responseCode = "404", description = "Food or size not found")
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public ResponseEntity<Void> deleteByFoodIdAndSizeId(
+  public void deleteByFoodIdAndSizeId(
     @Parameter(description = "The ID of the target food to delete", required = true, example = "10000")
     @PathVariable Long foodId,
     @Parameter(description = "The size ID of the target food to delete", required = true, example = "1")
     @PathVariable Integer sizeId
   ){
-    foodService.deleteByFoodIdAndSizeId(foodId, sizeId);
-    return ResponseEntity.noContent().build();
+    foodService.deleteVariantOfFood(foodId, sizeId);
   }
 
   @DeleteMapping("/{foodId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @PreAuthorize("hasRole('OWNER')")
   @Operation(
     summary = "Deletes a food without variant",
@@ -141,11 +152,10 @@ public class FoodController {
     @ApiResponse(responseCode = "204", description = "Food deleted successfully. No content returned"),
     @ApiResponse(responseCode = "404", description = "Food not found")
   })
-  public ResponseEntity<Void> deleteFood(
+  public void deleteFood(
     @Parameter(description = "The ID of the target food to delete", required = true, example = "10000")
     @PathVariable Long foodId
   ){
     foodService.deleteFood(foodId);
-    return ResponseEntity.noContent().build();
   }
 }

@@ -8,19 +8,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.ProductVariant;
-import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.FoodCreateRequest;
 import com.project.webpos.Entity.DTO.FoodCreateResponse;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
@@ -29,9 +27,11 @@ import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
 import com.project.webpos.Exception.InvalidRequestException;
 import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Mapper.FoodMapper;
 import com.project.webpos.Record.FoodImageOnly;
 import com.project.webpos.Repository.FoodRepository;
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -114,10 +114,10 @@ public class FoodService {
                   .contentType(MediaType.parseMediaType(contentType))
                   .body(resource);
       }
-      return ResponseEntity.notFound().build();
+      throw new ResourceNotFoundException("IMAGE_NOT_EXIST", "image does not exist");
     }catch(RuntimeException | IOException e){
       e.printStackTrace();
-      return ResponseEntity.notFound().build();
+      throw new ResourceNotFoundException("IMAGE_NOT_EXIST", "image does not exist");
     }
   }
 
@@ -141,9 +141,6 @@ public class FoodService {
    */
   @Transactional
   public FoodCreateResponse setFood(FoodCreateRequest request, MultipartFile file, Category category){
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-
     if(!request.getWithVariant() && request.getPrice() == null)
       throw new InvalidRequestException("UNABLE_TO_PROCESS", "CREATION", "price is required");
 
@@ -172,7 +169,19 @@ public class FoodService {
       inventoryService.setInventory(savedFood, request.getQuantity());
     }
     
-    log.info("A new Food is added {} by User {}", savedFood.getId(), loggedUser.getId());
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("add food")
+        .resourceId(savedFood.getId().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+      .setMessage("Food added successfully")
+      .addKeyValue("action_info", loggerFormat)
+      .log();
+
     return foodMapper.toCreateResponse(savedFood);
   }
 
@@ -185,9 +194,6 @@ public class FoodService {
   @Transactional 
   public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id, Category category){
     if(patchRequestHasRecord(patchRequest)){
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-  
       Food food = getFoodById(id);
       foodMapper.patchFood(patchRequest, food);
 
@@ -219,7 +225,18 @@ public class FoodService {
           inventoryService.patchInventoryByFoodIdWithoutVariant(food, patchRequest.getQuantity().orElse(0));
       }
   
-      log.info("A Food {} has been updated by User {}", food.getId(), loggedUser.getId());
+      LoggerFormat loggerFormat = LoggerFormat.builder()
+          .level("INFO")
+          .action("update food")
+          .resourceId(id.toString())
+          .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+          .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+          .build();
+
+      log.atInfo()
+        .setMessage("Food updated successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
       return foodMapper.toPatchResponse(foodRepository.save(food));
     }
 
@@ -233,7 +250,7 @@ public class FoodService {
    * @param sizeId the value of {@code Size} id to be searched
    * @return None
    */
-  public void deleteByFoodIdAndSizeId(Long foodId, Integer sizeId){
+  public void deleteVariantOfFood(Long foodId, Integer sizeId){
     ProductVariant productVariant = productVariantService.getProductVariantByFoodAndSize(foodId, sizeId);
     
     inventoryService.deleteByFoodIdAndProductVariantId(foodId, productVariant.getId());
@@ -246,15 +263,24 @@ public class FoodService {
    * @return None
    */
   public void deleteFood(Long foodId){
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal loggedUser = (UserPrincipal) authentication.getPrincipal();
-
     Food food = getFoodById(foodId);
     food.setIsDeleted(true);
     food.setIsActive(false);
     food.setDeletedAt(LocalDateTime.now());
     foodRepository.save(food);
-    log.info("Food {} is soft deleted by user {}", food.getId(), loggedUser.getId());
+
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("soft deletes food")
+        .resourceId(foodId.toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Soft deleted a food successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   // =======================================================
