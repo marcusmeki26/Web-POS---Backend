@@ -3,6 +3,7 @@ package com.project.webpos.Service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Food;
@@ -11,12 +12,16 @@ import com.project.webpos.Entity.Size;
 import com.project.webpos.Entity.DTO.ProductVariantCreateRequest;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
 import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Repository.ProductVariantRepository;
+import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductVariantService {
   private final ProductVariantRepository productVariantRepository;
   private final SizeService sizeService;
@@ -98,6 +103,19 @@ public class ProductVariantService {
    */
   public void deleteProductVariant(ProductVariant productVariant){
     productVariantRepository.delete(productVariant);
+    
+    LoggerFormat loggerFormat = LoggerFormat.builder()
+        .level("INFO")
+        .action("delete product variant/size")
+        .resourceId(productVariant.getId().toString())
+        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
+        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
+        .build();
+
+    log.atInfo()
+        .setMessage("Deleted product variant successfully")
+        .addKeyValue("action_info", loggerFormat)
+        .log();
   }
 
   // Can delete if no service will use this :REMOVE-COMMENT
