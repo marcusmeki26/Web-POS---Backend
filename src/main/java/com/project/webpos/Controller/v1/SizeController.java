@@ -50,13 +50,14 @@ public class SizeController {
   // }
 
   @GetMapping 
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves all the sizes",
     description = "Fetches all the sizes"
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved")
-  public ResponseEntity<List<SizeResponse>> getSizes(){
-    return ResponseEntity.ok(sizeService.getSizes());
+  public List<SizeResponse> getSizes(){
+    return sizeService.getSizes();
   }
 
   @PostMapping
