@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.webpos.AnnotationInterface.RateLimited;
 import com.project.webpos.Entity.DTO.TokenResponse;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
 import com.project.webpos.Service.Security.AuthService;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
   private final AuthService authService;
 
+  @RateLimited
   @PostMapping("/login")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
