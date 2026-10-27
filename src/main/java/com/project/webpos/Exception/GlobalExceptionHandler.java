@@ -2,6 +2,7 @@ package com.project.webpos.Exception;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -87,5 +88,16 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorMessage> handleInvalidRequestException(InvalidRequestException ex){
     log.warn("Invalid request: {} during {}", ex.getMessage(), ex.getProcessOf());
     return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNPROCESSABLE_CONTENT);
+  }
+
+  @ExceptionHandler(LimitReachedException.class)
+  public ResponseEntity<ErrorMessage> handleLimitReachedException(LimitReachedException ex){
+    log.warn("Limit reached. IP {} endpoint {}. Message {}", ex.getIpAddress(), ex.getEndpoint(), ex.getMessage());
+    // return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.TOO_MANY_REQUESTS);
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfter()))
+        .header("X-RateLimit-Limit", String.valueOf(ex.getRequestLimit()))
+        .header("X-RateLimit-Remaining", "0")
+        .body(new ErrorMessage(ex.getCode(), ex.getMessage()));
   }
 }
