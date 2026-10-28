@@ -92,7 +92,10 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(LimitReachedException.class)
   public ResponseEntity<ErrorMessage> handleLimitReachedException(LimitReachedException ex){
-    log.warn("Limit reached. IP {} endpoint {}. Message {}", ex.getIpAddress(), ex.getEndpoint(), ex.getMessage());
+    if(ex.getUserId() != null)
+      log.warn("Limit reached. User ID {}. Message {}", ex.getUserId(), ex.getMessage());
+    else
+      log.warn("Limit reached. IP {} endpoint {}. Message {}", ex.getIpAddress(), ex.getEndpoint(), ex.getMessage());
     // return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.TOO_MANY_REQUESTS);
     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
         .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfter()))
