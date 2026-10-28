@@ -122,25 +122,31 @@
 			<scope>compile</scope>
 		</dependency>
     <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-data-redis</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-aop</artifactId>
-				<version>3.5.16</version>
-				<scope>compile</scope>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+			<version>3.5.16</version>
+			<scope>compile</scope>
     </dependency>
     <dependency>
-        <groupId>com.bucket4j</groupId>
-        <artifactId>bucket4j-core</artifactId>
-        <version>8.10.1</version>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.10.1</version>
     </dependency>
     <dependency>
-        <groupId>com.bucket4j</groupId>
-        <artifactId>bucket4j-redis</artifactId>
-        <version>8.10.1</version>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-redis</artifactId>
+			<version>8.10.1</version>
     </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+			<version>4.1.1</version>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
