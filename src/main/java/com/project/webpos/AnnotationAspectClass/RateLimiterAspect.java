@@ -23,6 +23,10 @@ import lombok.RequiredArgsConstructor;
 public class RateLimiterAspect {
   private final LettuceBasedProxyManager<byte[]> lettuceBasedProxyManager;
 
+  /**
+   * Checks the limit for ip address on a specific endpoint
+   * @param rateLimited the values from the annotation @RateLimited
+   */
   @Before("@annotation(rateLimited)")
   public void beforeRequest(RateLimited rateLimited){
     HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
@@ -46,15 +50,15 @@ public class RateLimiterAspect {
       // Convert to seconds
       long retryAfterSeconds = (long) Math.ceil((double) nanosToWait / 1_000_000_000.0);
 
-        LimitReachedException limitReachedException = LimitReachedException.builder()
-            .code("TOO_MANY_REQUEST")
-            .ipAddress(ipAddress)
-            .endpoint(endpoint)
-            .message("Rate limit exceeded. Please try again later")
-            .availableToken(bucket.getAvailableTokens())
-            .retryAfter(retryAfterSeconds)
-            .build();
-        throw limitReachedException;
+      LimitReachedException limitReachedException = LimitReachedException.builder()
+          .code("TOO_MANY_REQUEST")
+          .message("Rate limit exceeded. Please try again later")
+          .ipAddress(ipAddress)
+          .endpoint(endpoint)
+          .availableToken(bucket.getAvailableTokens())
+          .retryAfter(retryAfterSeconds)
+          .build();
+      throw limitReachedException;
     }
   }
 }
