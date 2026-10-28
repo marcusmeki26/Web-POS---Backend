@@ -23,8 +23,8 @@ public class UserBasedRateLimiter {
    */
   public void checkToken(String cacheKey, String userId) throws LimitReachedException{
     BucketConfiguration configuration = BucketConfiguration.builder()
-        .addLimit(limit -> limit.capacity(5)
-            .refillGreedy(5, Duration.ofSeconds(120)))
+        .addLimit(limit -> limit.capacity(100)
+            .refillGreedy(100, Duration.ofSeconds(120)))
         .build();
 
     byte[] keyBytes = cacheKey.getBytes();
