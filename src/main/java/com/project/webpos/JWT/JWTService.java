@@ -1,4 +1,4 @@
-package com.project.webpos.Service.Security;
+package com.project.webpos.JWT;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;

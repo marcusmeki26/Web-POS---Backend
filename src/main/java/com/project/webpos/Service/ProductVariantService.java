@@ -12,9 +12,9 @@ import com.project.webpos.Entity.Size;
 import com.project.webpos.Entity.DTO.ProductVariantCreateRequest;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
 import com.project.webpos.Exception.ResourceNotFoundException;
+import com.project.webpos.JWT.JWTCheckerPerRequest;
 import com.project.webpos.Logging.LoggerFormat;
 import com.project.webpos.Repository.ProductVariantRepository;
-import com.project.webpos.Security.JWTCheckerPerRequest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

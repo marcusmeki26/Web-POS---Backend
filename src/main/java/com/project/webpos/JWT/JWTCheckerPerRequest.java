@@ -1,4 +1,4 @@
-package com.project.webpos.Security;
+package com.project.webpos.JWT;
 
 import java.io.IOException;
 
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import com.project.webpos.Service.Security.JWTService;
 import com.project.webpos.Service.Security.UserDetailService;
 import com.project.webpos.Service.Shared.UserBasedRateLimiter;
 import com.project.webpos.Entity.UserPrincipal;
