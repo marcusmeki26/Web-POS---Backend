@@ -9,8 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.MDC;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -46,11 +50,13 @@ public class FoodService {
   private final InventoryService inventoryService;
   private final FoodMapper foodMapper;
   private final FileStorageService fileStorageService;
+  private final StringRedisTemplate redisTemplate;
 
   /**
    * Retrieves all the record from {@code Food} entity that is active and not deleted
    * @return an object of {@code List<FoodResponse>}
    */
+  @Cacheable(value = "foods")
   public List<FoodResponse> getFoodList() {
     // List<Food> foodList = foodRepository.findAll();
     List<Food> foodList = foodRepository.findActiveAndNotDeleted();
@@ -80,6 +86,7 @@ public class FoodService {
    * @param categoryType The category type of {@code Category} entity
    * @return a {@code List<FoodResponse>}
    */
+  @Cacheable(value = "foods:category", key = "#id")
   public List<FoodResponse> getFoodByCategory(Integer id) {
     List<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(id);
     List<FoodResponse> foodResponseList = new ArrayList<>();
@@ -100,10 +107,17 @@ public class FoodService {
    * @return
    */
   public ResponseEntity<Resource> getImage(Long foodId){
-    String imageName = getImageByFoodId(foodId);
+    String cacheKey = "food:image::";
+    String filePathCached = redisTemplate.opsForValue().get(cacheKey + foodId);
+    
+    if(filePathCached == null){
+      filePathCached = getImageByFoodId(foodId);
+      redisTemplate.opsForValue().set(cacheKey + foodId, filePathCached);
+    }
+    
     Path path = fileStorageService.getPath();
     try{
-      Path imagePath = path.resolve(imageName).normalize();
+      Path imagePath = path.resolve(filePathCached).normalize();
       Resource resource = new UrlResource(imagePath.toUri());
       // Gets the type of content and appends it to the header
       String contentType = Files.probeContentType(imagePath);
@@ -126,7 +140,7 @@ public class FoodService {
    * @param foodId the value of food id to search
    * @return a {@code String} of image name
    */
-  public String getImageByFoodId(Long foodId){
+  private String getImageByFoodId(Long foodId){
     FoodImageOnly foodImageOnly = foodRepository.findProjectedById(foodId)
                                     .orElseThrow(() -> new ResourceNotFoundException("INVALID_FOOD", "food does not exist"));
 
@@ -139,6 +153,12 @@ public class FoodService {
    * @param file an object of {@code MultipartFile} that contains the image
    * @param category an object of {@code Category}
    */
+  @Caching(
+    evict = {
+      @CacheEvict(value = "foods", allEntries = true),
+      @CacheEvict(value = "foods:category", key = "#request.categoryId")
+    }
+  )
   @Transactional
   public FoodCreateResponse setFood(FoodCreateRequest request, MultipartFile file, Category category){
     if(!request.getWithVariant() && request.getPrice() == null)
@@ -191,6 +211,12 @@ public class FoodService {
    * @param id The id of {@code Table} entity to be updated
    * @return None
    */
+  @Caching(
+    evict = {
+      @CacheEvict(value = "foods", allEntries = true),
+      @CacheEvict(value = "foods:category", allEntries = true)
+    }
+  )
   @Transactional 
   public FoodPatchResponse patchFoodById(FoodPatchRequest patchRequest, Long id, Category category){
     if(patchRequestHasRecord(patchRequest)){
@@ -250,6 +276,12 @@ public class FoodService {
    * @param sizeId the value of {@code Size} id to be searched
    * @return None
    */
+  @Caching(
+    evict = {
+      @CacheEvict(value = "foods", allEntries = true),
+      @CacheEvict(value = "foods:category", allEntries = true)
+    }
+  )
   public void deleteVariantOfFood(Long foodId, Integer sizeId){
     ProductVariant productVariant = productVariantService.getProductVariantByFoodAndSize(foodId, sizeId);
     
@@ -262,6 +294,12 @@ public class FoodService {
    * @param foodId the id of {@code Food} entity to delete
    * @return None
    */
+  @Caching(
+    evict = {
+      @CacheEvict(value = "foods", allEntries = true),
+      @CacheEvict(value = "foods:category", allEntries = true)
+    }
+  )
   public void deleteFood(Long foodId){
     Food food = getFoodById(foodId);
     food.setIsDeleted(true);
