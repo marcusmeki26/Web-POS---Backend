@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.project.webpos.Configuration.CacheConfig;
 import com.project.webpos.Entity.Category;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.ProductVariant;
@@ -51,6 +52,7 @@ public class FoodService {
   private final FoodMapper foodMapper;
   private final FileStorageService fileStorageService;
   private final StringRedisTemplate redisTemplate;
+  private final CacheConfig cacheConfig;
 
   /**
    * Retrieves all the record from {@code Food} entity that is active and not deleted
@@ -112,7 +114,7 @@ public class FoodService {
     
     if(filePathCached == null){
       filePathCached = getImageByFoodId(foodId);
-      redisTemplate.opsForValue().set(cacheKey + foodId, filePathCached);
+      redisTemplate.opsForValue().set(cacheKey + foodId, filePathCached, cacheConfig.getDefaultTtl());
     }
     
     Path path = fileStorageService.getPath();
