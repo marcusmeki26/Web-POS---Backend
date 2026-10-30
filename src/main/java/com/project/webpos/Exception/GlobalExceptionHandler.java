@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice 
@@ -51,6 +52,12 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getMessage()), HttpStatus.CONFLICT);
   }
 
+  @ExceptionHandler(SignatureException.class)
+  public ResponseEntity<ErrorMessage> handleSignatureException(SignatureException ex){
+    log.warn("Invalid access token signature was trying to access", ex.getMessage());
+    return new ResponseEntity<>(new ErrorMessage("UNAUTHORIZED ACCESS", "You have an invalid credentails"), HttpStatus.UNAUTHORIZED);
+  }
+
   // =======================================================
   // CUSTOM EXCEPTIONS
   // =======================================================
@@ -75,6 +82,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ExpiredTokenException.class)
   public ResponseEntity<ErrorMessage> handleExpiredTokenException(ExpiredTokenException ex){
     log.warn("Expired refresh token: {}", ex.getMessage());
+    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNAUTHORIZED);
+  }
+
+  @ExceptionHandler(UnauthorizedAccessException.class)
+  public ResponseEntity<ErrorMessage> handleUnauthorizedAccessException(UnauthorizedAccessException ex){
+    log.warn("A user requested an access but has invalid details", ex.getMessage());
     return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.UNAUTHORIZED);
   }
 
