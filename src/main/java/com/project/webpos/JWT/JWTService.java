@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,8 +25,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 
 @Service 
+@Getter
 public class JWTService {
     private final String accessSecretKey;
     private final String refreshSecretKey;
@@ -77,8 +80,10 @@ public class JWTService {
 
     // This is a helper method for creating a token.
     private String createToken(Map<String, Object> claims, String subject, Date iat, Date exp, String secretKey){
+        String accessTokenId = UUID.randomUUID().toString();
         return Jwts.builder()
                 .claims()// starts the nested claims
+                .id(accessTokenId)
                 .add(claims) // uses the map to set the key-value pairs below.
                 .subject(subject) // sets sub - username = "sub": "username"
                 .issuedAt(iat) // sets iat - date = "iat": "1752848877"
@@ -95,12 +100,16 @@ public class JWTService {
 
     // returning expiration for access token
     private Date expAccessToken(){
-        return new Date(System.currentTimeMillis() + 60 * 60 * 1000); // an hour long
+        return new Date(System.currentTimeMillis() + 60 * 60 * 1000); // an hour long 
     }
 
     // returning expiration for refresh token
     private Date expRefreshToken(){
         return new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 30); // a month long
+    }
+
+    public String extractJti(String token){
+        return extractClaim(token, Claims::getId);
     }
 
     // This method is used to extract the username from the token and return it to validateToken method.
@@ -147,11 +156,15 @@ public class JWTService {
         throw new ExpiredTokenException("EXPIRED_REFRESH_TOKEN", "Refresh token is expired");
     }
 
+    public String extractRefreskTokenJti(String token){
+        return extractRefreshClaim(token, Claims::getId);
+    }
+
     private boolean isTokenRefreshExpired(String token) {
         return !extractRefreshExpiration(token).before(new Date());
     }
 
-    private Date extractRefreshExpiration(String token) {
+    public Date extractRefreshExpiration(String token) {
         return extractRefreshClaim(token, Claims::getExpiration);
     }
 
