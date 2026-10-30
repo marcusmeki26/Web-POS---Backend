@@ -29,3 +29,6 @@ spring.servlet.multipart.max-file-size=5MB
 spring.servlet.multipart.max-request-size=10MB
 # where you want to save the files
 app.file.upload-dir=uploads
+
+# Spring Caching Configuration
+app.cache.default-ttl=30m
