@@ -1,8 +1,8 @@
 package com.project.webpos.Controller.v1;
 
-import java.util.List;
-
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +25,7 @@ import com.project.webpos.Entity.DTO.FoodCreateResponse;
 import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
+import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Exception.ErrorMessage;
 import com.project.webpos.Service.FoodService;
 import com.project.webpos.Service.Shared.ProductManagementService;
@@ -54,14 +55,15 @@ public class FoodController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved food/s"),
     @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
-  public List<FoodResponse> getFoodList(
+  public PagedResponse<FoodResponse> getFoodList(
     @Parameter(description = "Filter food by is category ID", required = false, example = "1")
-    @RequestParam(name = "category", required = false) Integer id
+    @RequestParam(name = "category", required = false) Integer categoryId,
+    @PageableDefault(page = 0, size = 10, sort = "id") Pageable pageable
   ){
-    if(id != null)
-      return productManagementService.getFoodByCategory(id);
+    if(categoryId != null)
+      return productManagementService.getFoodByCategory(categoryId, pageable);
 
-    return foodService.getFoodList();
+    return foodService.getFoodList(pageable);
   }
 
   @GetMapping("/image/{foodId}")
