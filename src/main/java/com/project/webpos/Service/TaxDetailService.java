@@ -14,7 +14,8 @@ public class TaxDetailService {
   private final TaxDetailRepository taxDetailRepository;
   private final TaxDetailMapper taxDetailMapper;
 
-  public TaxDetailResponse getActiveTax(Boolean isActive){
-    return taxDetailMapper.toResponse(taxDetailRepository.findByIsActive(isActive));
+  public TaxDetailResponse getActiveTax(){
+    TaxDetailResponse taxDetailResponse =  taxDetailMapper.toResponse(taxDetailRepository.findByIsActive(true));
+    return taxDetailResponse;
   }
 }
