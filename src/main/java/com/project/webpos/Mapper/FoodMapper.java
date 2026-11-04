@@ -27,14 +27,14 @@ import com.project.webpos.Entity.DTO.FoodResponse;
 public interface FoodMapper {
   @Named("withVariantFoodMapping")
   @Mapping(target = "quantity", ignore = true)
-  FoodResponse toResponse(Food foodList);
+  FoodResponse toResponsePage(Food foodList);
 
   @IterableMapping(qualifiedByName = "withVariantFoodMapping")
   List<FoodResponse> toResponseList(List<Food> foodList);
 
   @Mapping(source = "food", target = "quantity")
   @Mapping(target = "inventory", ignore = true)
-  FoodResponse toResponseWithoutVariant(Food food);
+  FoodResponse toResponseWithoutVariantPage(Food food);
 
   default Integer mapInventoryToQuantity(Food food){
     if (food.getInventory() == null || food.getInventory().isEmpty()) {
