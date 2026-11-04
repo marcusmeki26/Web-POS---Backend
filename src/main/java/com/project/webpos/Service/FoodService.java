@@ -14,6 +14,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ import com.project.webpos.Entity.DTO.FoodPatchRequest;
 import com.project.webpos.Entity.DTO.FoodPatchResponse;
 import com.project.webpos.Entity.DTO.FoodResponse;
 import com.project.webpos.Entity.DTO.ProductVariantPatchRequest;
+import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Exception.InvalidRequestException;
 import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.JWT.JWTCheckerPerRequest;
@@ -59,18 +62,16 @@ public class FoodService {
    * @return an object of {@code List<FoodResponse>}
    */
   @Cacheable(value = "foods")
-  public List<FoodResponse> getFoodList() {
-    // List<Food> foodList = foodRepository.findAll();
-    List<Food> foodList = foodRepository.findActiveAndNotDeleted();
-    List<FoodResponse> foodResponseList = new ArrayList<>();
-    for(Food food : foodList){
-      if(food.getWithVariant()){
-        foodResponseList.add(foodMapper.toResponse(food));
-      }else{
-        foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
+  public PagedResponse<FoodResponse> getFoodList(Pageable pageable) {
+    Page<Food> foodList = foodRepository.findActiveAndNotDeleted(pageable);
+    Page<FoodResponse> foodResponseList = foodList.map(food -> {
+      if (food.getWithVariant()) {
+        return foodMapper.toResponsePage(food);
+      } else {
+        return foodMapper.toResponseWithoutVariantPage(food);
       }
-    }
-    return foodResponseList;
+    });
+    return new PagedResponse<>(foodResponseList);
   }
 
   /**
@@ -88,19 +89,18 @@ public class FoodService {
    * @param categoryType The category type of {@code Category} entity
    * @return a {@code List<FoodResponse>}
    */
-  @Cacheable(value = "foods:category", key = "#id")
-  public List<FoodResponse> getFoodByCategory(Integer id) {
-    List<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(id);
-    List<FoodResponse> foodResponseList = new ArrayList<>();
-    for(Food food : foods){
+  @Cacheable(value = "foods:category", key = "#id + '-' +#pageable.toString()")
+  public PagedResponse<FoodResponse> getFoodByCategory(Integer id, Pageable pageable) {
+    Page<Food> foods = foodRepository.findCategoryAndActiveAndNotDeleted(id, pageable);
+    Page<FoodResponse> foodResponseList = foods.map(food -> {
       if(food.getWithVariant()){
-        foodResponseList.add(foodMapper.toResponse(food));
+        return foodMapper.toResponsePage(food);
       }else{
-        foodResponseList.add(foodMapper.toResponseWithoutVariant(food));
+        return foodMapper.toResponseWithoutVariantPage(food);
       }
-    }
+    });
 
-    return foodResponseList;
+    return new PagedResponse<>(foodResponseList);
   }
 
   /**
