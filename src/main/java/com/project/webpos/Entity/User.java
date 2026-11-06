@@ -32,21 +32,26 @@ public class User {
   @Column(nullable = false)
   private String userId;
 
-  String firstname;
+  private String firstname;
 
-  String lastname;
+  private String lastname;
 
-  String nameOnReceipt;
+  private String nameOnReceipt;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  UserRole userRole = UserRole.CASHIER;
+  private UserRole userRole = UserRole.CASHIER;
 
   @Column(nullable = false, unique = true)
-  String username;
+  private String username;
 
   @Column(nullable = false)
-  String password;
+  private String password;
+
+  private String address;
+
+  @Column(nullable = false)
+  private Boolean isDeleted = false;
 
   @CreationTimestamp
   @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -55,6 +60,8 @@ public class User {
   @UpdateTimestamp 
   @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
   private LocalDateTime updatedAt;
+
+  private LocalDateTime deletedAt;
 
   // Called when .save() method is used
   @PrePersist
