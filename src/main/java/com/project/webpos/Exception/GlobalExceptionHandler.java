@@ -5,6 +5,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -52,10 +53,18 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(new ErrorMessage("INVALID_VALUE", ex.getMessage()), HttpStatus.CONFLICT);
   }
 
+  // Exception thrown during invalid signature from an access or refresh token
   @ExceptionHandler(SignatureException.class)
   public ResponseEntity<ErrorMessage> handleSignatureException(SignatureException ex){
     log.warn("Invalid access token signature was trying to access", ex.getMessage());
     return new ResponseEntity<>(new ErrorMessage("UNAUTHORIZED ACCESS", "You have an invalid credentails"), HttpStatus.UNAUTHORIZED);
+  }
+
+  // Exception thrown for accessing unauthorized endpoints
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorMessage> handleAccessDeniedException(AccessDeniedException ex){
+    log.warn("A user is trying to access an endpoint that is not authorized for this type of user", ex.getMessage());
+    return new ResponseEntity<>(new ErrorMessage("FORBIDDEN", "Resources is not accessible for this type of user"), HttpStatus.FORBIDDEN);
   }
 
   // =======================================================
