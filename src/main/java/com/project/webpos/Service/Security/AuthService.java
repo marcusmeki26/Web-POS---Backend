@@ -12,14 +12,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.User;
 import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.TokenResponse;
-import com.project.webpos.Entity.DTO.UserCreateRequest;
 import com.project.webpos.Entity.DTO.UserLogoutRequest;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
 import com.project.webpos.Exception.InvalidCombinationException;
@@ -42,41 +39,7 @@ public class AuthService {
   private final AuthenticationManager authenticationManager;
   private final UserRepository userRepository;
   private final JWTService jwtService;
-  private final PasswordEncoder encoder = new BCryptPasswordEncoder(12);
   private final CacheManagementService cacheManagementService;
-
-  /**
-   * Register a new user. Can only be performed by admin/owner role
-   * @param newUser value of {@code UserCreateRequest}
-   */
-  public void createUser(UserCreateRequest newUser){
-    Assert.notNull(newUser, "request not existing");
-    Assert.hasText(newUser.getUsername(), "username is required");
-    Assert.hasText(newUser.getPassword(), "password is required");
-    Assert.notNull(newUser.getUserRole(), "role is required");
-
-    User user = new User();
-    user.setFirstname(newUser.getFirstname());
-    user.setLastname(newUser.getLastname());
-    user.setNameOnReceipt(newUser.getNameOnReceipt());
-    user.setUserRole(newUser.getUserRole());
-    user.setUsername(newUser.getUsername());
-    user.setPassword(encoder.encode(newUser.getPassword()));
-    User savedUser = userRepository.save(user);
-
-    LoggerFormat loggerFormat = LoggerFormat.builder()
-        .level("INFO")
-        .action("log in user")
-        .resourceId(savedUser.getUserId())
-        .actorId(MDC.get(JWTCheckerPerRequest.USER_ID))
-        .endpoint(MDC.get(JWTCheckerPerRequest.ENDPOINT))
-        .build();
-
-    log.atInfo()
-      .setMessage("User added successfully")
-      .addKeyValue("action_info", loggerFormat)
-      .log();
-  }
 
   /**
    * Authentication and generation of Json Web Token (JWT)
