@@ -62,6 +62,9 @@ public class TransactionLine {
   @Column(nullable = false)
   private String size = "None";
   
+  @Column(nullable = false)
+  private Integer cashierId;
+  
   @ManyToOne
   @JoinColumn(name = "table_id")
   private TableList table;

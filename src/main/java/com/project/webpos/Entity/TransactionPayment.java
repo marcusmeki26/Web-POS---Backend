@@ -44,6 +44,9 @@ public class TransactionPayment {
   @Column(nullable = false)
   private Boolean changeLine;
 
+  @Column(nullable = false)
+  private Integer cashierId;
+
   @ManyToOne
   @JoinColumn(name = "table_id")
   private TableList table;

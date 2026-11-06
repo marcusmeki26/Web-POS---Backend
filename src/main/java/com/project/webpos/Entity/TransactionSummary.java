@@ -53,6 +53,9 @@ public class TransactionSummary {
   
   @Column(nullable = false)
   private Integer quantity;
+
+  @Column(nullable = false)
+  private Integer cashierId;
   
   @CreationTimestamp
   @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
