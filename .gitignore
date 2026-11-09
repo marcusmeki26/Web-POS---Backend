@@ -44,6 +44,6 @@ logs
 ### IMAGES ###
 uploads/
 
-application.properties
+application.yaml
 *.notes
 notes/

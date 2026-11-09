@@ -1,0 +1,33 @@
+server:
+  port: YOUR_SERVER_PORT
+spring:
+  application:
+    name: webpos
+  datasource:
+    url: YOUR_DATABASE_URL
+    username: YOUR_DATABASE_USERNAME
+    password: YOUR_DATABASE_PASSWORD
+  hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+springdoc:
+  swagger-ui:
+    path: YOUR_UI_PATH
+  api-docs:
+    path: YOUR_API_PATH
+app:
+  file:
+    upload-dir: uploads
+  cache:
+    default-ttl: 10m
