@@ -29,7 +29,7 @@ public class Inventory {
   @JoinColumn(name = "food_id")
   private Food food;
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne
   @JoinColumn(name = "product_variant_id")
   private ProductVariant productVariant;
 
