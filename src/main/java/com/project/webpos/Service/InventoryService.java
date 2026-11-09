@@ -1,12 +1,18 @@
 package com.project.webpos.Service;
 
+import java.util.List;
+
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.slf4j.MDC;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
+import com.project.webpos.Entity.DTO.InventorySummaryRequest;
+import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.JWT.JWTCheckerPerRequest;
 import com.project.webpos.Logging.LoggerFormat;
@@ -20,6 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InventoryService {
   private final InventoryRepository inventoryRepository;
+  
+  /**
+   * Fetches all inventory and its related table.
+   * @param pageable contains the value of {@code Pageable} which specfies the structure of the {@code Page} query
+   * @return an object of {@code PagedResponse<List<InventorySummaryRequest>>} that is a flat DTO that contains the inventory details + food name & its id + product variant name & its id
+   */
+  @Cacheable(value = "inventory:summary")
+  public PagedResponse<List<InventorySummaryRequest>> getInventorySummary(Pageable pageable){
+    return new PagedResponse<>(inventoryRepository.findAllInventorySummary(pageable));
+  }
 
   // Used for initializing menu (not permanent)
   public void setInventoryInit(Food food, Integer qty){
