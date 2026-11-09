@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
-import com.project.webpos.Entity.DTO.InventorySummaryRequest;
+import com.project.webpos.Entity.DTO.InventorySummaryResponse;
 import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Exception.ResourceNotFoundException;
 import com.project.webpos.JWT.JWTCheckerPerRequest;
@@ -33,7 +33,7 @@ public class InventoryService {
    * @return an object of {@code PagedResponse<List<InventorySummaryRequest>>} that is a flat DTO that contains the inventory details + food name & its id + product variant name & its id
    */
   @Cacheable(value = "inventory:summary")
-  public PagedResponse<List<InventorySummaryRequest>> getInventorySummary(Pageable pageable){
+  public PagedResponse<List<InventorySummaryResponse>> getInventorySummary(Pageable pageable){
     return new PagedResponse<>(inventoryRepository.findAllInventorySummary(pageable));
   }
 

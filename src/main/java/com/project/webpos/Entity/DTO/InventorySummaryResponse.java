@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter 
 @Setter 
 @AllArgsConstructor 
-public class InventorySummaryRequest {
+public class InventorySummaryResponse {
   private Long foodId;
   private String foodName;
   private Integer prodVarId;

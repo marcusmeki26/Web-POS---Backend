@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
-import com.project.webpos.Entity.DTO.InventorySummaryRequest;
+import com.project.webpos.Entity.DTO.InventorySummaryResponse;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
@@ -29,5 +29,5 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
     LEFT JOIN pv.size s 
     WHERE f.isDeleted = false AND f.isActive = true
   """)
-  Page<List<InventorySummaryRequest>> findAllInventorySummary(Pageable pageable);
+  Page<List<InventorySummaryResponse>> findAllInventorySummary(Pageable pageable);
 }

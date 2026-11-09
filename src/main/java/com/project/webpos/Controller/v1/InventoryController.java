@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.webpos.Entity.DTO.InventorySummaryRequest;
+import com.project.webpos.Entity.DTO.InventorySummaryResponse;
 import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Service.InventoryService;
 
@@ -37,7 +37,7 @@ public class InventoryController {
     """
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved records")
-  public PagedResponse<List<InventorySummaryRequest>> getInventorySummary(
+  public PagedResponse<List<InventorySummaryResponse>> getInventorySummary(
     @PageableDefault(page = 0, size = 5, sort = "id") Pageable pageable
   ){
     return inventoryService.getInventorySummary(pageable);
