@@ -22,7 +22,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
   Optional<Inventory> findByFoodIdAndProductVariantId(Long foodId, Integer prodVarId);
 
   @Query("""
-    SELECT new com.project.webpos.Entity.DTO.InventorySummaryRequest(f.id, f.foodName, pv.id, s.sizeName, i.quantity, i.createdAt, i.updatedAt) 
+    SELECT new com.project.webpos.Entity.DTO.InventorySummaryResponse(f.id, f.foodName, pv.id, s.sizeName, i.quantity, i.createdAt, i.updatedAt) 
     FROM Inventory i 
     JOIN i.food f 
     LEFT JOIN i.productVariant pv 
