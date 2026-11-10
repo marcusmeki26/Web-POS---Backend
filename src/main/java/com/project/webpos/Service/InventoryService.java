@@ -1,7 +1,5 @@
 package com.project.webpos.Service;
 
-import java.util.List;
-
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.slf4j.MDC;
 import org.springframework.cache.annotation.Cacheable;
@@ -33,7 +31,7 @@ public class InventoryService {
    * @return an object of {@code PagedResponse<List<InventorySummaryRequest>>} that is a flat DTO that contains the inventory details + food name & its id + product variant name & its id
    */
   @Cacheable(value = "inventory:summary")
-  public PagedResponse<List<InventorySummaryResponse>> getInventorySummary(Pageable pageable){
+  public PagedResponse<InventorySummaryResponse> getInventorySummary(Pageable pageable){
     return new PagedResponse<>(inventoryRepository.findAllInventorySummary(pageable));
   }
 

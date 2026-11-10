@@ -1,6 +1,5 @@
 package com.project.webpos.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -29,5 +28,5 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
     LEFT JOIN pv.size s 
     WHERE f.isDeleted = false AND f.isActive = true
   """)
-  Page<List<InventorySummaryResponse>> findAllInventorySummary(Pageable pageable);
+  Page<InventorySummaryResponse> findAllInventorySummary(Pageable pageable);
 }

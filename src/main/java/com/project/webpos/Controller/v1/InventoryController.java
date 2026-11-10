@@ -1,7 +1,5 @@
 package com.project.webpos.Controller.v1;
 
-import java.util.List;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -37,7 +35,7 @@ public class InventoryController {
     """
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved records")
-  public PagedResponse<List<InventorySummaryResponse>> getInventorySummary(
+  public PagedResponse<InventorySummaryResponse> getInventorySummary(
     @PageableDefault(page = 0, size = 5, sort = "id") Pageable pageable
   ){
     return inventoryService.getInventorySummary(pageable);
