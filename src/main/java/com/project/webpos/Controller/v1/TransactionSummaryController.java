@@ -1,12 +1,49 @@
 package com.project.webpos.Controller.v1;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.webpos.Entity.DTO.PagedResponse;
+import com.project.webpos.Entity.DTO.TransactionSummaryResponse;
+import com.project.webpos.Entity.DTO.TransactionSummaryFilter;
+import com.project.webpos.Service.TransactionSummaryService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
-@Controller
+@RestController 
 @RequiredArgsConstructor
-@RequestMapping("/v1/transactions")
+@RequestMapping("/api/v1/transaction-summary")
+@PreAuthorize("hasRole('OWNER')")
 public class TransactionSummaryController {
+  private final TransactionSummaryService transactionSummaryService;
+  // if dynamic handling of query parameter is possible
+  @GetMapping 
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves the record of transaction summary",
+    description = "Retrieves and returns a paginated record"
+  )
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved")
+  public PagedResponse<TransactionSummaryResponse> getTransactionSummary(
+    TransactionSummaryFilter transactionSummaryFilter,
+    @PageableDefault(page = 0, size = 20, sort = "id") Pageable pageable
+  ){
+    return transactionSummaryService.getTransactionSummary(transactionSummaryFilter, pageable);
+  }
+
+  @GetMapping("/fields")
+  @ResponseStatus(HttpStatus.OK)
+  public List<String> getEntityFields(){
+    return transactionSummaryService.getEntityFields();
+  }
 }
