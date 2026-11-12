@@ -11,7 +11,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
+// import jakarta.persistence.SequenceGenerator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,10 +19,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransactionSummary {
-  @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "trans_sum_id_seq")
-  @SequenceGenerator(name = "trans_sum_id_seq", sequenceName = "trans_sum_id_sequence", initialValue = 10000, allocationSize = 1)
-  private Long id;
+  @Id 
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
   // Receipt No should appear at the UI
   @Column(nullable = false)
