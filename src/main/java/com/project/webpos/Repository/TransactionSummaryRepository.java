@@ -1,13 +1,14 @@
 package com.project.webpos.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.project.webpos.Entity.TransactionSummary;
 
 @Repository
-public interface TransactionSummaryRepository extends JpaRepository<TransactionSummary,Long> {
+public interface TransactionSummaryRepository extends JpaRepository<TransactionSummary,Long>, JpaSpecificationExecutor<TransactionSummary> {
   @Query("SELECT ts " + 
          "FROM TransactionSummary ts " +
          "ORDER BY ts.receiptNo DESC " +
