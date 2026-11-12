@@ -13,7 +13,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,10 +20,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransactionLine {
-  @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "trans_sum_id_seq")
-  @SequenceGenerator(name = "trans_sum_id_seq", sequenceName = "trans_sum_id_sequence", initialValue = 10000, allocationSize = 1)
-  private Long id;
+  @Id 
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
   @Column(nullable = false)
   private String receiptNo;
