@@ -57,6 +57,11 @@ public class UserController {
 
   @GetMapping("/roles")
   @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves the role that a user can have",
+    description = "Retrieves the role that a user can have"
+  )
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved")
   public UserRole[] getUserRoles(){
     return userService.getUserRoles();
   }
