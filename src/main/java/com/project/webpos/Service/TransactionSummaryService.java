@@ -4,20 +4,76 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionSummary;
+import com.project.webpos.Entity.DTO.PagedResponse;
+import com.project.webpos.Entity.DTO.TransactionSummaryResponse;
+import com.project.webpos.Entity.DTO.TransactionSummaryFilter;
 import com.project.webpos.Enum.EntryType;
+import com.project.webpos.Mapper.TransactionSummaryMapper;
 import com.project.webpos.Repository.TransactionSummaryRepository;
+import com.project.webpos.Specification.TransactionSummarySpecificiation;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor  
 public class TransactionSummaryService {
+  private static final String[] OMIT_FIELDS = {"class", "id"}; 
+
   private final TransactionSummaryRepository transactionSummaryRepository;
+  private final TransactionSummaryMapper transactionSummaryMapper;
+
+  /**
+   * Retrieves the transaction
+   * @param pageable contains the value of {@code Pageable} which specfies the structure of the {@code Page} query
+   * @return an object of {@code PageResponse<TransactionSummaryResponse>}
+   */
+  @Cacheable(
+    value = "transaction-summary",
+    condition = "#transactionSummaryFilter == null"
+  )
+  public PagedResponse<TransactionSummaryResponse> getTransactionSummary(TransactionSummaryFilter transactionSummaryFilter, Pageable pageable){
+    if(transactionSummaryFilter != null){
+      Specification<TransactionSummary> spec = Specification
+          .where(TransactionSummarySpecificiation.hasCashierId(transactionSummaryFilter.getCashierId()))
+          .and(TransactionSummarySpecificiation.hasReceiptNo(transactionSummaryFilter.getReceiptNo()))
+          .and(TransactionSummarySpecificiation.hasTransactionNo(transactionSummaryFilter.getTransactionNo()));
+
+      return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(spec, pageable)));
+    }
+
+    return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(pageable)));
+  }
+
+  /**
+   * Retrieves the fields from {@code TransactionSummary} entity and transforms the text into Pascal Case
+   * @return an object of {@code List<String>} that contains the transformed fields.
+   */
+  public List<String> getEntityFields(){
+    BeanWrapperImpl wrapper = new BeanWrapperImpl(TransactionSummary.class);
+    return Stream.of(wrapper.getPropertyDescriptors())
+        .map(descriptor -> {
+          String descriptorName = descriptor.getName();
+
+          int indexOfCapitalizedLetter = getTheIndexOfTheFirstCapitalizedLetter(descriptorName); 
+          
+          if(indexOfCapitalizedLetter == -1)
+            return Character.toUpperCase(descriptorName.charAt(0)) + descriptorName.substring(1, descriptorName.length());
+        
+          return Character.toUpperCase(descriptorName.charAt(0)) + descriptorName.substring(1, indexOfCapitalizedLetter) + ' ' + descriptorName.substring(indexOfCapitalizedLetter);
+        })
+        .filter(field -> !List.of(OMIT_FIELDS).contains(field.toLowerCase()))
+        .toList();
+  }
 
   /**
    * Inserts the summary of the order
@@ -74,5 +130,18 @@ public class TransactionSummaryService {
       // %0 means pad 0 based on the length
       return String.format("%0" + transNo.length() + "d", incReceipt);
     }
+  }
+
+  // =======================================================
+  // UTILITIES
+  // =======================================================
+  private int getTheIndexOfTheFirstCapitalizedLetter(String word){
+    for(int i = 0; i < word.length(); i++){
+      if(Character.isUpperCase(word.charAt(i))){
+        return i;
+      }
+    }
+
+    return -1;
   }
 }
