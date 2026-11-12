@@ -3,10 +3,15 @@ package com.project.webpos.Service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionLine;
+import com.project.webpos.Entity.DTO.PagedResponse;
+import com.project.webpos.Entity.DTO.TransactionLineResponse;
+import com.project.webpos.Mapper.TransactionLineMapper;
 import com.project.webpos.Repository.TransactionLineRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -15,6 +20,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor  
 public class TransactionLineService {
   private final TransactionLineRepository transactionLineRepository;
+  private final TransactionLineMapper transactionLineMapper;
+
+  /**
+   * Retrieves the transaction line
+   * @param pageable contains the value of {@code Pageable} which specfies the structure of the {@code Page} query
+   * @return an object of {@code PageResponse<TransactionSummaryResponse>}
+   */
+  @Cacheable(value = "transaction-line", key = "#pageable")
+  public PagedResponse<TransactionLineResponse> getTransactionLine(Pageable pageable){
+    return new PagedResponse<>(transactionLineMapper.toResponsePage(transactionLineRepository.findAll(pageable)));
+  }
   
   /**
    * Inserts entry type = ORDER into Transaction Line table
