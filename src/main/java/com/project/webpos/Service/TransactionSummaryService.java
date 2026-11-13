@@ -12,15 +12,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.project.webpos.Component.DynamicSpecification;
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionSummary;
 import com.project.webpos.Entity.DTO.PagedResponse;
+import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionSummaryResponse;
-import com.project.webpos.Entity.DTO.TransactionSummaryFilter;
 import com.project.webpos.Enum.EntryType;
 import com.project.webpos.Mapper.TransactionSummaryMapper;
 import com.project.webpos.Repository.TransactionSummaryRepository;
-import com.project.webpos.Specification.TransactionSummarySpecificiation;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,17 +41,13 @@ public class TransactionSummaryService {
     value = "transaction-summary",
     condition = "#transactionSummaryFilter == null"
   )
-  public PagedResponse<TransactionSummaryResponse> getTransactionSummary(TransactionSummaryFilter transactionSummaryFilter, Pageable pageable){
-    if(transactionSummaryFilter != null){
-      Specification<TransactionSummary> spec = Specification
-          .where(TransactionSummarySpecificiation.hasCashierId(transactionSummaryFilter.getCashierId()))
-          .and(TransactionSummarySpecificiation.hasReceiptNo(transactionSummaryFilter.getReceiptNo()))
-          .and(TransactionSummarySpecificiation.hasTransactionNo(transactionSummaryFilter.getTransactionNo()));
-
-      return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(spec, pageable)));
-    }
-
+  public PagedResponse<TransactionSummaryResponse> getTransactionSummary(Pageable pageable){
     return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(pageable)));
+  }
+
+  public PagedResponse<TransactionSummaryResponse> getTransactionSummarySearch(SearchRequest searchRequest, Pageable pageable){
+      Specification<TransactionSummary> spec = new DynamicSpecification<>(searchRequest.filters());
+      return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(spec, pageable)));
   }
 
   /**
