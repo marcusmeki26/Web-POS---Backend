@@ -7,13 +7,15 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.DTO.PagedResponse;
+import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionSummaryResponse;
-import com.project.webpos.Entity.DTO.TransactionSummaryFilter;
 import com.project.webpos.Service.TransactionSummaryService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,15 +37,24 @@ public class TransactionSummaryController {
   )
   @ApiResponse(responseCode = "200", description = "Successfully retrieved")
   public PagedResponse<TransactionSummaryResponse> getTransactionSummary(
-    TransactionSummaryFilter transactionSummaryFilter,
+    // TransactionSummaryFilter transactionSummaryFilter,
     @PageableDefault(page = 0, size = 20, sort = "id") Pageable pageable
   ){
-    return transactionSummaryService.getTransactionSummary(transactionSummaryFilter, pageable);
+    return transactionSummaryService.getTransactionSummary(pageable);
   }
 
   @GetMapping("/fields")
   @ResponseStatus(HttpStatus.OK)
   public List<String> getEntityFields(){
     return transactionSummaryService.getEntityFields();
+  }
+
+  @PostMapping("/search")
+  @ResponseStatus(HttpStatus.OK)
+  public PagedResponse<TransactionSummaryResponse> getTransactionSummarySearch(
+    @RequestBody SearchRequest searchRequest,
+    @PageableDefault(page = 0, size = 20, sort = "id") Pageable pageable
+  ){
+    return transactionSummaryService.getTransactionSummarySearch(searchRequest, pageable);
   }
 }
