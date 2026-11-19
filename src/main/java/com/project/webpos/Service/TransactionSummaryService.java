@@ -46,7 +46,7 @@ public class TransactionSummaryService {
   }
 
   /**
-   * Retrieves the record based on the dynamic filtering from the user
+   * Retrieves the record based on the filter sent by the user
    * @param searchRequest an object of {@code List<FilterRequest>} that contains the dynamic filter to be used
    * @param pageable contains the value of {@code Pageable} which specfies the structure of the {@code Page} query
    * @return an object of {@code PageResponse<TransactionSummaryResponse>}
@@ -57,8 +57,8 @@ public class TransactionSummaryService {
   }
 
   /**
-   * Retrieves the fields from {@code TransactionSummary} entity and transforms the text into Pascal Case
-   * @return an object of {@code List<String>} that contains the transformed fields.
+   * Retrieves the fields from {@code TransactionSummary} entity and humanizes the field names
+   * @return a {@code List<String>} that is in humanized form
    */
   public List<String> getEntityFields(){
     BeanWrapperImpl wrapper = new BeanWrapperImpl(TransactionSummary.class);
