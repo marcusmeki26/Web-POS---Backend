@@ -13,7 +13,7 @@ public interface TransactionLineMapper {
   @Mapping(target = "foodDescription", source = "shortFoodDesc")
   TransactionLineResponse toResponse(TransactionLine transactionLine);
 
-  default Page<TransactionLineResponse> toResponsePage(Page<TransactionLine> transactionLinePage){
+  default Page<TransactionLineResponse> toResponseContent(Page<TransactionLine> transactionLinePage){
     if(transactionLinePage == null)
       return null;
 
