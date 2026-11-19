@@ -45,6 +45,12 @@ public class TransactionSummaryService {
     return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(pageable)));
   }
 
+  /**
+   * Retrieves the record based on the dynamic filtering from the user
+   * @param searchRequest an object of {@code List<FilterRequest>} that contains the dynamic filter to be used
+   * @param pageable contains the value of {@code Pageable} which specfies the structure of the {@code Page} query
+   * @return an object of {@code PageResponse<TransactionSummaryResponse>}
+   */
   public PagedResponse<TransactionSummaryResponse> getTransactionSummarySearch(SearchRequest searchRequest, Pageable pageable){
       Specification<TransactionSummary> spec = new DynamicSpecification<>(searchRequest.filters());
       return new PagedResponse<>(transactionSummaryMapper.toResponseContent(transactionSummaryRepository.findAll(spec, pageable)));
