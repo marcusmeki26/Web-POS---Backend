@@ -19,6 +19,7 @@ import com.project.webpos.Service.TransactionLineService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 
 @RestController 
@@ -42,12 +43,25 @@ public class TransactionLineController {
 
   @GetMapping("/fields")
   @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves the fields of Transaction Line",
+    description = "Retrieves the fields of Transaction Line and converts it into humanized form"
+  )
+  @ApiResponse(responseCode = "200", description = "Successfully retrieved")
   public List<String> getEntityFields(){
     return transactionLineService.getEntityFields();
   }
 
   @PostMapping("/search")
   @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves the record of Transaction Line based on the user filter request",
+    description = "Retrieves the record of Transaction Line based on the user filter request"
+  )
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved"),
+    @ApiResponse(responseCode = "422", description = "Invalid operator or filter value")
+  })
   public PagedResponse<TransactionLineResponse> getTransactionLineSearch(
     @RequestBody SearchRequest searchRequest,
     @PageableDefault(page = 0, size = 20, sort = "receiptNo") Pageable pageable
