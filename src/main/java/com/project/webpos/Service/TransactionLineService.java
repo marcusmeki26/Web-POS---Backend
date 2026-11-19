@@ -45,6 +45,7 @@ public class TransactionLineService {
    * Retrieves the fields from {@code TransactionSummary} entity and humanizes the field names
    * @return a {@code List<String>} that is in humanized form
    */
+  @Cacheable(value = "transaction-line:fields")
   public List<String> getEntityFields(){
     BeanWrapperImpl wrapper = new BeanWrapperImpl(TransactionLine.class);
     return Stream.of(wrapper.getPropertyDescriptors())
