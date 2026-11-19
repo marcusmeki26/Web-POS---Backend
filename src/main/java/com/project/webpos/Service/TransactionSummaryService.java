@@ -60,6 +60,7 @@ public class TransactionSummaryService {
    * Retrieves the fields from {@code TransactionSummary} entity and humanizes the field names
    * @return a {@code List<String>} that is in humanized form
    */
+  @Cacheable(value = "transaction-summary:fields")
   public List<String> getEntityFields(){
     BeanWrapperImpl wrapper = new BeanWrapperImpl(TransactionSummary.class);
     return Stream.of(wrapper.getPropertyDescriptors())
