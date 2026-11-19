@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Component.DynamicSpecification;
+import com.project.webpos.Component.UtilityComponent;
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionLine;
 import com.project.webpos.Entity.DTO.PagedResponse;
@@ -18,7 +19,6 @@ import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionLineResponse;
 import com.project.webpos.Mapper.TransactionLineMapper;
 import com.project.webpos.Repository.TransactionLineRepository;
-import com.project.webpos.Service.Shared.UtilityService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,7 +29,7 @@ public class TransactionLineService {
 
   private final TransactionLineRepository transactionLineRepository;
   private final TransactionLineMapper transactionLineMapper;
-  private final UtilityService utilityService;
+  private final UtilityComponent utilityComponent;
 
   /**
    * Retrieves the transaction line
@@ -49,9 +49,9 @@ public class TransactionLineService {
     BeanWrapperImpl wrapper = new BeanWrapperImpl(TransactionLine.class);
     return Stream.of(wrapper.getPropertyDescriptors())
         .map(descriptor -> {
-          int indexOfCapitalizedLetter = utilityService.getTheIndexOfTheFirstCapitalizedLetter(descriptor.getName());
+          int indexOfCapitalizedLetter = utilityComponent.getTheIndexOfTheFirstCapitalizedLetter(descriptor.getName());
           
-          return utilityService.humanizeFieldNames(indexOfCapitalizedLetter, descriptor.getName());
+          return utilityComponent.humanizeFieldNames(indexOfCapitalizedLetter, descriptor.getName());
         })
         .filter(field -> !List.of(OMIT_FIELDS).contains(field.toLowerCase()))
         .toList();
