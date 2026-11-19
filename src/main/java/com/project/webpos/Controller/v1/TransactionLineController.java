@@ -1,4 +1,4 @@
-package com.project.webpos.Controller;
+package com.project.webpos.Controller.v1;
 
 import java.util.List;
 
