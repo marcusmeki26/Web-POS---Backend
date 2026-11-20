@@ -17,6 +17,4 @@ public class TransactionPaymentResponse {
   private Boolean changeLine;
   private Integer cashierId;
   private Integer tableId;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
 }
