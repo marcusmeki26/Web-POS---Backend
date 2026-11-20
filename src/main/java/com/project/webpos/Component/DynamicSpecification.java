@@ -60,6 +60,8 @@ public class DynamicSpecification<T> implements Specification<T> {
       return value;
     else if(pathType == Integer.class || pathType == int.class)
       return Integer.parseInt(value);
+    else if(pathType == Long.class || pathType == long.class)
+      return Long.parseLong(value);
     else if(pathType == BigDecimal.class)
       return new BigDecimal(value);
     else if(pathType == LocalDateTime.class)
