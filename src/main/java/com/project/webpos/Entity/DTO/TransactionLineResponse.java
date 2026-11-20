@@ -19,7 +19,6 @@ public class TransactionLineResponse {
   private Long number;
   private String foodDescription;
   private BigDecimal price;
-  private Integer sizeId;
   private String size;
   private Integer cashierId;
   private Integer tableId;
