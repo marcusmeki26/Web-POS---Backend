@@ -75,7 +75,7 @@ public class TransactionSummaryService {
           return Character.toUpperCase(descriptorName.charAt(0)) + descriptorName.substring(1, indexOfCapitalizedLetter) + ' ' + descriptorName.substring(indexOfCapitalizedLetter);
         })
         .filter(field -> !List.of(OMIT_FIELDS).contains(field.toLowerCase()))
-        .toList();
+        .collect(Collectors.toList());
   }
 
   /**

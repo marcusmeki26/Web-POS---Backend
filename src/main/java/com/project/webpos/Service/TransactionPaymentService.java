@@ -2,6 +2,7 @@ package com.project.webpos.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.BeanWrapperImpl;
@@ -54,7 +55,7 @@ public class TransactionPaymentService {
           return utilityComponent.humanizeFieldNames(indexOfCapitalizedLetter, descriptor.getName());
         })
         .filter(field -> !List.of(OMIT_FIELDS).contains(field.toLowerCase()))
-        .toList();
+        .collect(Collectors.toList());
   }
 
   /**
