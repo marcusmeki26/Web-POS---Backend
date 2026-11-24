@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.webpos.Entity.DTO.StoreInformationPostOrPutRequest;
+import com.project.webpos.Entity.DTO.StoreInformationPutRequest;
 import com.project.webpos.Entity.DTO.StoreInformationResponse;
 import com.project.webpos.Record.CompanyInformationResponse;
 import com.project.webpos.Record.TaxPercentResponse;
@@ -48,7 +48,7 @@ public class StoreInformationController {
   @PutMapping
   @ResponseStatus(HttpStatus.OK)
   public StoreInformationResponse updateStoreInformation(
-    @Valid @RequestBody StoreInformationPostOrPutRequest storeInformationUpdateRequest
+    @Valid @RequestBody StoreInformationPutRequest storeInformationUpdateRequest
   ){
     return storeInformationService.updateStoreInformation(storeInformationUpdateRequest);
   }

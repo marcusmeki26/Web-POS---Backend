@@ -3,7 +3,7 @@ package com.project.webpos.Service;
 import org.springframework.stereotype.Service;
 
 import com.project.webpos.Entity.StoreInformation;
-import com.project.webpos.Entity.DTO.StoreInformationPostOrPutRequest;
+import com.project.webpos.Entity.DTO.StoreInformationPutRequest;
 import com.project.webpos.Entity.DTO.StoreInformationResponse;
 import com.project.webpos.Mapper.StoreInformationMapper;
 import com.project.webpos.Record.CompanyInformationResponse;
@@ -50,7 +50,7 @@ public class StoreInformationService {
    * @param storeInformationUpdateRequest
    * @return
    */
-  public StoreInformationResponse updateStoreInformation(StoreInformationPostOrPutRequest storeInformationUpdateRequest){
+  public StoreInformationResponse updateStoreInformation(StoreInformationPutRequest storeInformationUpdateRequest){
     StoreInformation storeInformation = storeInformationRepository.findFirst()
         .orElse(new StoreInformation());
 
