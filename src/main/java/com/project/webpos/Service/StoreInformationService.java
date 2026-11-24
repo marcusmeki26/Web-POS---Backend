@@ -1,0 +1,60 @@
+package com.project.webpos.Service;
+
+import org.springframework.stereotype.Service;
+
+import com.project.webpos.Entity.StoreInformation;
+import com.project.webpos.Entity.DTO.StoreInformationPostOrPutRequest;
+import com.project.webpos.Entity.DTO.StoreInformationResponse;
+import com.project.webpos.Mapper.StoreInformationMapper;
+import com.project.webpos.Record.CompanyInformationResponse;
+import com.project.webpos.Record.TaxPercentResponse;
+import com.project.webpos.Repository.StoreInformationRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service 
+@RequiredArgsConstructor 
+public class StoreInformationService {
+  private final StoreInformationRepository storeInformationRepository;
+  private final StoreInformationMapper storeInformationMapper;
+
+  /**
+   * 
+   * @return
+   */
+  public StoreInformationResponse getStoreInformation(){
+    return storeInformationMapper.toResponse(
+      storeInformationRepository.findFirst()
+          .orElse(new StoreInformation())
+    );
+  }
+
+  /**
+   * 
+   * @return
+   */
+  public CompanyInformationResponse getCompanyInformation(){
+    return storeInformationRepository.findCompanyInformation();
+  }
+
+  /**
+   * 
+   * @return
+   */
+  public TaxPercentResponse getTaxPercent(){
+    return storeInformationRepository.findTaxPercent();
+  }
+
+  /**
+   * 
+   * @param storeInformationUpdateRequest
+   * @return
+   */
+  public StoreInformationResponse updateStoreInformation(StoreInformationPostOrPutRequest storeInformationUpdateRequest){
+    StoreInformation storeInformation = storeInformationRepository.findFirst()
+        .orElse(new StoreInformation());
+
+    storeInformationMapper.toEntity(storeInformationUpdateRequest, storeInformation);
+    return storeInformationMapper.toResponse(storeInformationRepository.save(storeInformation));
+  }
+}
