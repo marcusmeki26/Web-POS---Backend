@@ -25,6 +25,8 @@ import com.project.webpos.Exception.UserNotFoundException;
 import com.project.webpos.JWT.JWTCheckerPerRequest;
 import com.project.webpos.JWT.JWTService;
 import com.project.webpos.Logging.LoggerFormat;
+import com.project.webpos.Record.LoginResponse;
+import com.project.webpos.Record.LoginResponse.UserInformation;
 import com.project.webpos.Repository.UserRepository;
 import com.project.webpos.Service.Shared.CacheManagementService;
 
@@ -44,9 +46,9 @@ public class AuthService {
   /**
    * Authentication and generation of Json Web Token (JWT)
    * @param creds a value of {@code UserLoginCreateRequest}
-   * @return an object of {@code TokenResponse} that contains access token & refresh token
+   * @return an object of {@code Loginresponse} that contains access token, refresh token and user information
    */
-  public TokenResponse login(UserTokenCreateRequest creds){
+  public LoginResponse login(UserTokenCreateRequest creds){
     Assert.notNull(creds, "request not existing");
     Assert.hasText(creds.getUsername(), " username is required");
     Assert.hasText(creds.getPassword(), " password is required");
@@ -70,7 +72,10 @@ public class AuthService {
         .setMessage("User logged in")
         .addKeyValue("action_info", loggerFormat)
         .log();
-      return jwtService.generateToken(userPrincipal.getUsername(), userPrincipal.getUserId(), userPrincipal.getAuthorities()); // calling the method to generate the token.
+      TokenResponse tokenResponse = jwtService.generateToken(userPrincipal.getUsername(), userPrincipal.getUserId(), userPrincipal.getAuthorities()); // calling the method to generate the token.
+      UserInformation userInformation = new UserInformation(userPrincipal.getId(), userPrincipal.getUsername());
+
+      return new LoginResponse(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), userInformation);
     }
 
     throw new InvalidCombinationException("INVALID_USERNAME_AND_PASSWORD", "Username or password is incorrect");

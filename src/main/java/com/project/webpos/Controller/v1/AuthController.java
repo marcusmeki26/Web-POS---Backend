@@ -14,6 +14,7 @@ import com.project.webpos.Entity.DTO.NewAccessKeyRequest;
 import com.project.webpos.Entity.DTO.TokenResponse;
 import com.project.webpos.Entity.DTO.UserLogoutRequest;
 import com.project.webpos.Entity.DTO.UserTokenCreateRequest;
+import com.project.webpos.Record.LoginResponse;
 import com.project.webpos.Service.Security.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +47,7 @@ public class AuthController {
       content = @Content(schema = @Schema(implementation = ErrorMessage.class))
     )
   })
-  public TokenResponse login(
+  public LoginResponse login(
     @Valid @RequestBody UserTokenCreateRequest creds
   ){
     return authService.login(creds);
