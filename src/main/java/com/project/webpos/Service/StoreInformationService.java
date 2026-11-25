@@ -24,7 +24,7 @@ public class StoreInformationService {
    */
   public StoreInformationResponse getStoreInformation(){
     return storeInformationMapper.toResponse(
-      storeInformationRepository.findFirst()
+      storeInformationRepository.findFirstBy()
           .orElse(new StoreInformation())
     );
   }
@@ -34,7 +34,7 @@ public class StoreInformationService {
    * @return
    */
   public CompanyInformationResponse getCompanyInformation(){
-    return storeInformationRepository.findCompanyInformation();
+    return storeInformationRepository.findCompanyInformationBy();
   }
 
   /**
@@ -42,7 +42,7 @@ public class StoreInformationService {
    * @return
    */
   public TaxPercentResponse getTaxPercent(){
-    return storeInformationRepository.findTaxPercent();
+    return storeInformationRepository.findTaxPercentBy();
   }
 
   /**
@@ -51,7 +51,7 @@ public class StoreInformationService {
    * @return
    */
   public StoreInformationResponse updateStoreInformation(StoreInformationPutRequest storeInformationUpdateRequest){
-    StoreInformation storeInformation = storeInformationRepository.findFirst()
+    StoreInformation storeInformation = storeInformationRepository.findFirstBy()
         .orElse(new StoreInformation());
 
     storeInformationMapper.toEntity(storeInformationUpdateRequest, storeInformation);
