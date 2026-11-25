@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.project.webpos.Component.DynamicSpecification;
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionSummary;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionSummaryResponse;
@@ -82,7 +83,7 @@ public class TransactionSummaryService {
    * Inserts the summary of the order
    * @param orders contains the {@code List<OrderList>}
    */
-  public void setTransactionSummary(List<OrderList> orders){
+  public void setTransactionSummary(List<OrderList> orders, UserPrincipal userPrincipal){
     Map<Boolean, List<OrderList>> partitioned = orders.stream()
                                                   .collect(Collectors.partitioningBy(o -> o.getEntryType() == EntryType.ORDER));
     List<OrderList> ordersByOrder = partitioned.get(true);
@@ -116,6 +117,7 @@ public class TransactionSummaryService {
     transactionSummary.setDiscountAmount(discountAmt);
     transactionSummary.setPayment(payment);
     transactionSummary.setQuantity(quantity);
+    transactionSummary.setCashierId(userPrincipal.getId());
     transactionSummaryRepository.save(transactionSummary);
   }
 
