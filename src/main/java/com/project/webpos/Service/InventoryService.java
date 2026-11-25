@@ -99,6 +99,29 @@ public class InventoryService {
   }
 
   /**
+   * Retrieves the Inventory of the given food id and locks the table.
+   * @param foodId the id of the food to search
+   * @return an object of {@code Inventory}
+   * @throws {@code ResourceNotFoundException} if the given food id does not exist
+   */
+  public Inventory getInventoryWithoutVariantWithLock(Long foodId){
+    return inventoryRepository.findLockingByFoodIdAndProductVariantIdIsNull(foodId)
+        .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_EXIST", "the inventory does not exist with the given food id"));
+  }
+
+  /**
+   * Retrieves the Inventory of the given food id and product variant id and locks the table.
+   * @param foodId the id of the food to search
+   * @param prodVarId the id of the product variant to search
+   * @return an object of {@code Inventory}
+   * @throws {@code ResourceNotFoundException} if the given food id & product variant id does not exist.
+   */
+  public Inventory getInventoryWithVariantWithLock(Long foodId, Integer prodVarId){
+    return inventoryRepository.findLockingByFoodIdAndProductVariantId(foodId, prodVarId)
+        .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_EXIST", "the inventory does not exist with the given food id & product variant id"));
+  }
+
+  /**
    * Updates/Inserts the record to {@code Inventory} entity. Should only be used to {@code Food} entity with variants
    * @param patchRequest an object of {@code FoodPatchRequest}
    */
@@ -176,5 +199,13 @@ public class InventoryService {
    */
   public void deleteByFoodId(Long foodId){
     deleteInventory(getInventoryByFoodAndWithoutVariant(foodId));
+  }
+
+  /**
+   * Performs an update to the specified inventory object
+   * @param inventory an object of {@code Inventory} to update
+   */
+  public void updateInventory(Inventory inventory){
+    inventoryRepository.save(inventory);
   }
 }
