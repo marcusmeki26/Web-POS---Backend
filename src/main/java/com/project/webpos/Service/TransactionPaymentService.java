@@ -1,6 +1,8 @@
 package com.project.webpos.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,6 +17,7 @@ import com.project.webpos.Component.DynamicSpecification;
 import com.project.webpos.Component.UtilityComponent;
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionPayment;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionPaymentResponse;
@@ -73,23 +76,45 @@ public class TransactionPaymentService {
    * Inserts entry type = PAYMENT into Transaction Payment table
    * @param orders contains the {@code List<OrderList>} in which the entry type = PAYMENT
    */
-  public void setTransactionPayment(List<OrderList> orders){
-    orders.forEach(order -> {
-      TransactionPayment transactionPayment = new TransactionPayment();
-      transactionPayment.setReceiptNo(order.getReceiptNo());
-      transactionPayment.setNumber(order.getNumber());
-      transactionPayment.setAmountTendered(order.getAmount());
-      // Add here that checks from tender type table if it is a card :REMOVE-COMMENT
-      // transactionPayment.setAmountTendered(null);
-      if(transactionPayment.getAmountTendered().compareTo(BigDecimal.valueOf(0)) == -1)
-        transactionPayment.setChangeLine(true);
-      else
-        transactionPayment.setChangeLine(false);
+  public void setTransactionPayment(List<OrderList> orders, UserPrincipal userPrincipal){
+    Deque<Integer> paymentTender = new ArrayDeque<>();
+    List<OrderList> sortedOrders = orders.stream()
+        .sorted()
+        .toList();
+    TransactionPayment paymentLine = new TransactionPayment();
+    for(OrderList order: sortedOrders){
+      if(
+        paymentTender.isEmpty() ||
+        paymentTender.peek() != order.getNumber().intValue() || 
+        order.getAmount().signum() < 0
+      ){
+        if(
+          paymentTender.size() > 0 &&
+          (paymentTender.peek() != order.getNumber().intValue() ||
+          order.getAmount().signum() < 0)
+        ){
+          transactionPaymentRepository.save(paymentLine);
+          paymentLine = new TransactionPayment();
+        }
 
+        paymentLine.setReceiptNo(order.getReceiptNo());
+        paymentLine.setNumber(order.getNumber().intValue());
+        paymentLine.setAmountTendered(order.getAmount());
+        if(paymentLine.getAmountTendered().compareTo(BigDecimal.valueOf(0)) == -1)
+          paymentLine.setChangeLine(true);
+        else
+          paymentLine.setChangeLine(false);
+        paymentLine.setTable(order.getTable());
+        paymentLine.setCashierId(userPrincipal.getId());
 
-      transactionPayment.setTable(order.getTable());
+        paymentTender.push(order.getNumber().intValue());
+      }else{
+        BigDecimal newAmount = paymentLine.getAmountTendered().add(order.getAmount());
+        paymentLine.setAmountTendered(newAmount);
+      }
 
-      transactionPaymentRepository.save(transactionPayment);
-    });
+      if(order.equals(sortedOrders.getLast()))
+        transactionPaymentRepository.save(paymentLine);
+    }
   }
 }
