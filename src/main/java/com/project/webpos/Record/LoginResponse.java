@@ -6,7 +6,7 @@ public record LoginResponse(
   UserInformation user
 ) {
   public record UserInformation(
-    long id,
+    int id,
     String username
   ){
   }
