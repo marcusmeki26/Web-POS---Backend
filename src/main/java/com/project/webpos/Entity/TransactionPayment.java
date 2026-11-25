@@ -32,7 +32,7 @@ public class TransactionPayment {
   private LocalDateTime transactionDate;
 
   @Column(nullable = false)
-  private Long number;
+  private Integer number;
 
   @Column(nullable = false)
   private BigDecimal amountTendered;
