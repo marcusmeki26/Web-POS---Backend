@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,8 @@ import com.project.webpos.Entity.Food;
 import com.project.webpos.Entity.Inventory;
 import com.project.webpos.Entity.ProductVariant;
 import com.project.webpos.Entity.DTO.InventorySummaryResponse;
+
+import jakarta.persistence.LockModeType;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
@@ -29,4 +32,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer>{
     WHERE f.isDeleted = false AND f.isActive = true
   """)
   Page<InventorySummaryResponse> findAllInventorySummary(Pageable pageable);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<Inventory> findLockingByFoodIdAndProductVariantIdIsNull(Long foodId);
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<Inventory> findLockingByFoodIdAndProductVariantId(Long foodId, Integer prodVarId);
 }
