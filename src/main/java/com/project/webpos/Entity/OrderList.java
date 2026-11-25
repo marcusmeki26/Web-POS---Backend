@@ -24,7 +24,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class OrderList {
+public class OrderList implements Comparable<OrderList> {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
@@ -81,4 +81,9 @@ public class OrderList {
   @ManyToOne
   @JoinColumn(name = "order_id")
   private OrderType orderType;
+
+  @Override 
+  public int compareTo(OrderList orderList){
+    return this.number.compareTo(orderList.number);
+  }
 }
