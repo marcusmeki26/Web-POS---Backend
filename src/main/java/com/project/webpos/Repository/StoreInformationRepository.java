@@ -9,7 +9,7 @@ import com.project.webpos.Record.CompanyInformationResponse;
 import com.project.webpos.Record.TaxPercentResponse;
 
 public interface StoreInformationRepository extends JpaRepository<StoreInformation, Integer> {
-  Optional<StoreInformation> findFirst();
-  TaxPercentResponse findTaxPercent();
-  CompanyInformationResponse findCompanyInformation();
+  Optional<StoreInformation> findFirstBy();
+  TaxPercentResponse findTaxPercentBy();
+  CompanyInformationResponse findCompanyInformationBy();
 }
