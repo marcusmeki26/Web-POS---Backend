@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.webpos.Entity.OrderList;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderExistingPatchRequest;
@@ -212,9 +214,10 @@ public class OrderController {
     @ApiResponse(responseCode = "400", description = "Validation failed on the payload fields", content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
   })
   public OrderPaymentResponse setPayment(
-    @Valid @RequestBody OrderPaymentCreateRequest request
+    @Valid @RequestBody OrderPaymentCreateRequest request,
+    @AuthenticationPrincipal UserPrincipal userPrincipal
   ){
-      OrderPaymentResponse orderPaymentResponse = orderService.setPayment(request);
+      OrderPaymentResponse orderPaymentResponse = orderService.setPayment(request, userPrincipal);
       if(orderPaymentResponse.getProcessTransaction()){
         return orderPaymentResponse; 
       }else{
