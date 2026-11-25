@@ -125,4 +125,12 @@ public class GlobalExceptionHandler {
         .header("X-RateLimit-Remaining", "0")
         .body(new ErrorMessage(ex.getCode(), ex.getMessage()));
   }
+
+  @ExceptionHandler(StockIsEmptyException.class)
+  public ResponseEntity<ErrorMessage> handleStockIsEmptyException(StockIsEmptyException ex){
+    log.warn("Cannot add product. Stock is empty");
+    log.warn("{}", ex.getMessage());
+
+    return new ResponseEntity<>(new ErrorMessage(ex.getCode(), ex.getMessage()), HttpStatus.CONFLICT);
+  }
 }
