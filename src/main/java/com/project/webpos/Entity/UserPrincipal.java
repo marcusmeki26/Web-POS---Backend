@@ -14,7 +14,7 @@ import lombok.Getter;
 
 @Getter 
 public class UserPrincipal implements UserDetails {
-    private final long id;
+    private final int id;
     private final String userId;
     private final String username;
     private final String password;
@@ -30,7 +30,7 @@ public class UserPrincipal implements UserDetails {
 
     @JsonCreator
     public UserPrincipal(
-        @JsonProperty("id") long id,
+        @JsonProperty("id") int id,
         @JsonProperty("userId") String userId,
         @JsonProperty("username") String username,
         @JsonProperty("password") String password,
@@ -43,7 +43,7 @@ public class UserPrincipal implements UserDetails {
         this.authorities = authorities;
     }
 
-    public long getId(){
+    public int getId(){
         return id;
     }
 
