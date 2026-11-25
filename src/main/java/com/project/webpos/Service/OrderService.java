@@ -11,6 +11,7 @@ import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.OrderType;
 import com.project.webpos.Entity.TableList;
 import com.project.webpos.Entity.TransactionSummary;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.OrderCreateRequest;
 import com.project.webpos.Entity.DTO.OrderDeleteRequest;
 import com.project.webpos.Entity.DTO.OrderExistingPatchRequest;
@@ -28,6 +29,7 @@ import com.project.webpos.Entity.DTO.OrderPaymentResponse;
 import com.project.webpos.Mapper.OrderMapper;
 import com.project.webpos.Repository.OrderRepository;
 import com.project.webpos.Repository.TransactionSummaryRepository;
+import com.project.webpos.Service.Shared.ProductManagementService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ public class OrderService {
   private final TransactionLineService transactionLineService;
   private final TransactionPaymentService transactionPaymentService;
   private final TransactionSummaryService transactionSummaryService;
+  private final ProductManagementService productManagementService;
 
   public List<OrderResponse> getOrders(){
     return orderMapper.toResponseList(orderRepository.findAll());
@@ -117,11 +120,17 @@ public class OrderService {
    * @param patchRequest The object of OrderPatchRequest class
    * @return true if updating is successful
    */
+  @Transactional 
   public OrderList patchOrder(Integer id, OrderPatchRequest patchRequest){
+    // Checks product availability
     if(orderPatchRequestHasRecord(patchRequest)){
       OrderList orderList = getById(id);
+
+      // Checks product availability
+      if(orderList.getEntryType() == EntryType.ORDER)
+        productManagementService.checkProductAvailability(orderList.getNumber(), orderList.getSizeId(), patchRequest.getQuantity().get());
       
-      orderList.setQuantity(patchRequest.getQuantity().get());
+      orderList.setQuantity(orderList.getQuantity() + patchRequest.getQuantity().get());
       BigDecimal price = orderList.getPrice();
       BigDecimal amount = BigDecimal.ZERO;
       BigDecimal newDiscAmt = BigDecimal.ZERO;
@@ -194,6 +203,7 @@ public class OrderService {
    * @param receiptNo value of {@code String} the receipt no. of the table that has existing orders 
    * @param orderPatchRequests value of {@code List<OrderPatchRequest>} the order that will be added to the table
    */
+  @Transactional
   public void addOrderToAnExistingOrder(String receiptNo, List<OrderExistingPatchRequest> orderPatchRequests){
     orderPatchRequests.forEach(order -> {
       OrderList orderListSave, orderListDel;
@@ -203,6 +213,10 @@ public class OrderService {
         orderListSave = orderRepository.findByNumberAndTableIdAndSizeId(order.getNumber(), order.getTableId(), order.getSizeId());
 
       if(orderListSave != null){ // Has existing record on the table
+        // Checks product availability
+        if(orderListSave.getEntryType() == EntryType.ORDER)
+          productManagementService.checkProductAvailability(order.getNumber(), order.getSizeId(), order.getQuantity());
+
         orderListSave.setQuantity((orderListSave.getQuantity() + order.getQuantity()));
         BigDecimal newDiscAmt = BigDecimal.ZERO;
         BigDecimal tempNewAmt = orderListSave.getPrice().multiply(BigDecimal.valueOf(orderListSave.getQuantity())); 
@@ -220,6 +234,10 @@ public class OrderService {
       }else{ // No existing record on the table
         OrderList orderList = getById(order.getId());
         
+        // Checks product availability
+        if(orderList.getEntryType() == EntryType.ORDER)
+          productManagementService.checkProductAvailability(order.getNumber(), order.getSizeId(), order.getQuantity());
+
         orderList.setReceiptNo(receiptNo);
         orderList.setPlaced(true);
 
@@ -272,6 +290,7 @@ public class OrderService {
    * @param request value of {@code OrderCreateRequest}
    * @return {@code void}
    */
+  @Transactional
   public void setOrder(OrderCreateRequest request){
     OrderList order = new OrderList();
 
@@ -284,6 +303,10 @@ public class OrderService {
     order.setSizeId(request.getSizeId());
     order.setSize(request.getSize());
     order.setQuantity(request.getQuantity());
+
+    // Checks product availability
+    if(order.getEntryType() == EntryType.ORDER)
+      productManagementService.checkProductAvailability(order.getNumber(), order.getSizeId(), order.getQuantity());
     
     BigDecimal totalPrice = order.getPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
     // Turn discount percent into decimal
@@ -312,7 +335,7 @@ public class OrderService {
    * @return true if the payment is inserted successfully.
    */
   @Transactional 
-  public OrderPaymentResponse setPayment(OrderPaymentCreateRequest request){
+  public OrderPaymentResponse setPayment(OrderPaymentCreateRequest request, UserPrincipal userPrincipal){
     if(request.getReceiptNo() == null || request.getTableNo() == null)
         throw new InvalidRequestException("UNABLE_TO_PROCESS", "PROCESSING OF PAYMENT", "Cannot process request without receipt no or table no");
     
@@ -337,8 +360,7 @@ public class OrderService {
     if(payment.compareTo(totalAmt) == -1){
       List<OrderList> orders = orderRepository.findByTable_Id(request.getTableNo());
       return new OrderPaymentResponse(false, orderMapper.toResponseList(orders));
-    }
-    else{
+    }else{
       // Insert change line
       BigDecimal change = payment.subtract(totalAmt);
       if(change.compareTo(BigDecimal.valueOf(0)) == 1){
@@ -358,20 +380,21 @@ public class OrderService {
       }
       
       List<OrderList> orders = orderRepository.findByTable_Id(request.getTableNo());
+      // Insertion to transaction line
       List<OrderList> ordersByOrder = orders.stream()
                                         .filter(o -> o.getEntryType() == EntryType.ORDER)
                                         .toList();
       if(ordersByOrder != null) 
-        transactionLineService.setTransactionLine(ordersByOrder);
-      
+        transactionLineService.setTransactionLine(ordersByOrder, userPrincipal);
+      // Insertion to transaction payment
       List<OrderList> ordersByPayment = orders.stream()
                                           .filter(o -> o.getEntryType() == EntryType.PAYMENT)
                                           .toList();
       if(ordersByPayment != null)
-        transactionPaymentService.setTransactionPayment(ordersByPayment);
-
+        transactionPaymentService.setTransactionPayment(ordersByPayment, userPrincipal);
+      // Insertion to transaction summary
       if(orders != null)
-        transactionSummaryService.setTransactionSummary(orders);
+        transactionSummaryService.setTransactionSummary(orders, userPrincipal);
 
       orderRepository.deleteAll(orders);
 
@@ -390,7 +413,6 @@ public class OrderService {
       
       return new OrderPaymentResponse(true, orderMapper.toResponseList(orders));
     }
-    
   }
 
   /**
@@ -398,6 +420,7 @@ public class OrderService {
    * @param request The object of OrderDeleteRequest class
    * @return true if the deletion is successful
    */
+  @Transactional
   public void deleteOrder(OrderDeleteRequest request){
     if(request.getReceiptNo() == null || request.getNumber() == null)
       throw new InvalidRequestException("UNABLE_TO_PROCESS", "DELETION OF ORDER", "receipt no. and food id cannot be null or empty");
@@ -411,6 +434,8 @@ public class OrderService {
       orderList = orderRepository.findByReceiptNoAndNumber(request.getReceiptNo(), request.getNumber())
           .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_EXIST", "no order found. cannot perform deletion"));
     orderRepository.delete(orderList);
+
+    productManagementService.revertQuantityCount(orderList);
 
     LoggerFormat loggerFormat = LoggerFormat.builder()
         .level("INFO")
