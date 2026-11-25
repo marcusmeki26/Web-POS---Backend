@@ -1,6 +1,5 @@
 package com.project.webpos.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,6 +14,7 @@ import com.project.webpos.Component.DynamicSpecification;
 import com.project.webpos.Component.UtilityComponent;
 import com.project.webpos.Entity.OrderList;
 import com.project.webpos.Entity.TransactionLine;
+import com.project.webpos.Entity.UserPrincipal;
 import com.project.webpos.Entity.DTO.PagedResponse;
 import com.project.webpos.Entity.DTO.SearchRequest;
 import com.project.webpos.Entity.DTO.TransactionLineResponse;
@@ -74,13 +74,13 @@ public class TransactionLineService {
    * Inserts entry type = ORDER into Transaction Line table
    * @param orders contains the {@code List<OrderList>} in which the entry type = ORDER
    */
-  public void setTransactionLine(List<OrderList> orders){
+  public void setTransactionLine(List<OrderList> orders, UserPrincipal userPrincipal){
     orders.forEach(order -> {
       TransactionLine transactionLine = new TransactionLine();
       transactionLine.setReceiptNo(order.getReceiptNo());
       transactionLine.setGrossAmount(order.getPrice().negate());
       transactionLine.setNetAmount(order.getAmount().negate());
-      transactionLine.setVatAmount(BigDecimal.valueOf(0));
+      transactionLine.setVatAmount(order.getVatAmount());
       transactionLine.setDiscountAmount(order.getDiscountAmount());
       transactionLine.setQuantity(-order.getQuantity());
       transactionLine.setNumber(order.getNumber());
@@ -89,6 +89,7 @@ public class TransactionLineService {
       transactionLine.setSize(order.getSize());
       transactionLine.setSizeId(order.getSizeId());
       transactionLine.setTable(order.getTable());
+      transactionLine.setCashierId(userPrincipal.getId());
 
       transactionLineRepository.save(transactionLine);
     });
