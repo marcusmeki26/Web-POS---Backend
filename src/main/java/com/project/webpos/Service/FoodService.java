@@ -61,7 +61,7 @@ public class FoodService {
    * Retrieves all the record from {@code Food} entity that is active and not deleted
    * @return an object of {@code List<FoodResponse>}
    */
-  @Cacheable(value = "foods")
+  // @Cacheable(value = "foods")
   public PagedResponse<FoodResponse> getFoodList(Pageable pageable) {
     Page<Food> foodList = foodRepository.findActiveAndNotDeleted(pageable);
     Page<FoodResponse> foodResponseList = foodList.map(food -> {
