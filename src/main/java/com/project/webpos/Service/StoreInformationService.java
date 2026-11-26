@@ -19,10 +19,11 @@ public class StoreInformationService {
   private final StoreInformationMapper storeInformationMapper;
 
   /**
-   * 
-   * @return
+   * Retrieves the record from store information. If no record is found, returns the default value of each fields
+   * @return an object of {@code StoreInformationResponse} that contains the record
    */
   public StoreInformationResponse getStoreInformation(){
+    // Change the implementation use orElseGet since orElse still runs even if there is a record found
     return storeInformationMapper.toResponse(
       storeInformationRepository.findFirstBy()
           .orElse(new StoreInformation())
@@ -30,25 +31,25 @@ public class StoreInformationService {
   }
 
   /**
-   * 
-   * @return
+   * Retrieves only the company information from store information. If no record is found, returns the default value of each fields
+   * @return an object of {@code CompanyInformationResponse} that conatins the company information record
    */
   public CompanyInformationResponse getCompanyInformation(){
     return storeInformationRepository.findCompanyInformationBy();
   }
 
   /**
-   * 
-   * @return
+   * Retrieves only the tax percent. If no record is found, <b>12%</b> will be the default value
+   * @return an object of {@code TaxPercentResponse} that contains the tax percent
    */
   public TaxPercentResponse getTaxPercent(){
     return storeInformationRepository.findTaxPercentBy();
   }
 
   /**
-   * 
-   * @param storeInformationUpdateRequest
-   * @return
+   * Performs an update on store information record based on user's request
+   * @param storeInformationUpdateRequest contains update request payload
+   * @return an object of {@code StoreInformationResponse} that contains the updated entity
    */
   public StoreInformationResponse updateStoreInformation(StoreInformationPutRequest storeInformationUpdateRequest){
     StoreInformation storeInformation = storeInformationRepository.findFirstBy()
