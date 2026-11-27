@@ -19,12 +19,12 @@ public class StoreInformation {
   @Id 
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
-  private String companyName;
+  private String companyName = "Web POS";
   private String companyAddress;
   private String companyContactNo;
   private String companyEmail;
   @Column(nullable = false)
-  private Double taxPercent;
+  private Double taxPercent = 12.00;
   @UpdateTimestamp
   @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") 
   private LocalDateTime updatedAt;
