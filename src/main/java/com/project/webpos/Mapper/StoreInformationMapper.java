@@ -9,6 +9,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import com.project.webpos.Entity.StoreInformation;
 import com.project.webpos.Entity.DTO.StoreInformationPutRequest;
 import com.project.webpos.Entity.DTO.StoreInformationResponse;
+import com.project.webpos.Record.CompanyInformationResponse;
 
 @Mapper(componentModel = "spring")
 public interface StoreInformationMapper {
@@ -22,4 +23,6 @@ public interface StoreInformationMapper {
   @Mapping(target = "updatedAt", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   void toEntity(StoreInformationPutRequest storeInformationPostOrPutRequest, @MappingTarget StoreInformation storeInformation);
+
+  CompanyInformationResponse toCompanyInformationResponse(StoreInformation storeInformation);
 }
