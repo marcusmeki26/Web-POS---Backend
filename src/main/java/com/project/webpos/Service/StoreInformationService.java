@@ -23,11 +23,9 @@ public class StoreInformationService {
    * @return an object of {@code StoreInformationResponse} that contains the record
    */
   public StoreInformationResponse getStoreInformation(){
-    // Change the implementation use orElseGet since orElse still runs even if there is a record found
-    return storeInformationMapper.toResponse(
-      storeInformationRepository.findFirstBy()
-          .orElse(new StoreInformation())
-    );
+    return storeInformationRepository.findFirstBy()
+        .map(record -> storeInformationMapper.toResponse(record))
+        .orElseGet(() -> storeInformationMapper.toResponse(new StoreInformation()));
   }
 
   /**
@@ -35,7 +33,8 @@ public class StoreInformationService {
    * @return an object of {@code CompanyInformationResponse} that conatins the company information record
    */
   public CompanyInformationResponse getCompanyInformation(){
-    return storeInformationRepository.findCompanyInformationBy();
+    return storeInformationRepository.findCompanyInformationBy()
+        .orElseGet(() -> storeInformationMapper.toCompanyInformationResponse(new StoreInformation()));
   }
 
   /**
@@ -43,7 +42,8 @@ public class StoreInformationService {
    * @return an object of {@code TaxPercentResponse} that contains the tax percent
    */
   public TaxPercentResponse getTaxPercent(){
-    return storeInformationRepository.findTaxPercentBy();
+    return storeInformationRepository.findTaxPercentBy()
+        .orElse(new TaxPercentResponse(12));
   }
 
   /**
@@ -53,7 +53,7 @@ public class StoreInformationService {
    */
   public StoreInformationResponse updateStoreInformation(StoreInformationPutRequest storeInformationUpdateRequest){
     StoreInformation storeInformation = storeInformationRepository.findFirstBy()
-        .orElse(new StoreInformation());
+        .orElseGet(() -> new StoreInformation());
 
     storeInformationMapper.toEntity(storeInformationUpdateRequest, storeInformation);
     return storeInformationMapper.toResponse(storeInformationRepository.save(storeInformation));
